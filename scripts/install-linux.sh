@@ -14,28 +14,39 @@ PIXMAP_DIR="$DATA_HOME/pixmaps"
 ICON_THEME_ROOT="$DATA_HOME/icons/hicolor"
 BINARY=""
 
-# Prefer dist/, then default cargo release path, then deb bundle unpack, then CARGO_TARGET_DIR.
+# Collect candidates and pick the newest by mtime (stale dist/ must not win over a fresh build).
+candidates=()
 for candidate in \
     "$ROOT/dist/$APP_NAME" \
-    "$ROOT/src-tauri/target/release/$APP_NAME"; do
-    if [[ -x "$candidate" ]]; then
-        BINARY="$candidate"
-        break
+    "$ROOT/src-tauri/target/release/$APP_NAME" \
+    "${CARGO_TARGET_DIR:-}/release/$APP_NAME"; do
+    if [[ -n "$candidate" && -x "$candidate" ]]; then
+        candidates+=("$candidate")
     fi
 done
 
-if [[ -z "$BINARY" ]]; then
+while IFS= read -r -d '' path; do
+    if [[ -x "$path" && "$(basename "$path")" == "$APP_NAME" ]]; then
+        candidates+=("$path")
+    fi
+done < <(find "$ROOT/src-tauri/target/release/bundle" -type f -name "$APP_NAME" -print0 2>/dev/null || true)
+
+if [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
     while IFS= read -r -d '' path; do
         if [[ -x "$path" && "$(basename "$path")" == "$APP_NAME" ]]; then
-            BINARY="$path"
-            break
+            candidates+=("$path")
         fi
-    done < <(find "$ROOT/src-tauri/target/release/bundle" -type f -name "$APP_NAME" -print0 2>/dev/null || true)
+    done < <(find "$CARGO_TARGET_DIR/release/bundle" -type f -name "$APP_NAME" -print0 2>/dev/null || true)
 fi
 
-if [[ -z "$BINARY" && -n "${CARGO_TARGET_DIR:-}" && -x "$CARGO_TARGET_DIR/release/$APP_NAME" ]]; then
-    BINARY="$CARGO_TARGET_DIR/release/$APP_NAME"
-fi
+newest_mtime=0
+for candidate in "${candidates[@]+"${candidates[@]}"}"; do
+    mtime=$(stat -c '%Y' "$candidate" 2>/dev/null || echo 0)
+    if (( mtime >= newest_mtime )); then
+        newest_mtime=$mtime
+        BINARY="$candidate"
+    fi
+done
 
 if [[ -z "$BINARY" ]]; then
     echo "Не знайдено бінарник $APP_NAME." >&2
@@ -43,10 +54,15 @@ if [[ -z "$BINARY" ]]; then
     echo "Очікується один з шляхів:" >&2
     echo "  dist/$APP_NAME" >&2
     echo "  src-tauri/target/release/$APP_NAME" >&2
+    echo "  \$CARGO_TARGET_DIR/release/$APP_NAME" >&2
     exit 1
 fi
 
-mkdir -p "$INSTALL_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$PIXMAP_DIR"
+mkdir -p "$ROOT/dist" "$INSTALL_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$PIXMAP_DIR"
+# Keep dist/ in sync with whatever we install (so the next run is not stale).
+if [[ "$(realpath "$BINARY")" != "$(realpath "$ROOT/dist/$APP_NAME" 2>/dev/null || true)" ]]; then
+    install -m 755 "$BINARY" "$ROOT/dist/$APP_NAME"
+fi
 install -m 755 "$BINARY" "$INSTALL_DIR/$APP_NAME"
 ln -sfn "$INSTALL_DIR/$APP_NAME" "$BIN_DIR/$APP_NAME"
 
