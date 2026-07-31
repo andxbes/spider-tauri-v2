@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (порт Electron → Tauri v2; size: deb 3.7 MB vs Electron zip 121 MB)  
+> Останнє оновлення: 2026-07-31 (Linux menubar: force Adwaita light GTK theme)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -96,9 +96,12 @@ api.js listen → Renderer
 npm install
 npm run build:css
 npm run dev          # tauri dev
-npm run build        # tauri build
+npm run build        # tauri build → .deb + release binary
+npm run install:linux  # user-local install (Manjaro/Arch): ~/.local/opt + PATH + .desktop
+npm run deploy:linux   # build + install:linux
 ```
 
+`scripts/install-linux.sh` шукає бінарник у `dist/spider-tauri` або `src-tauri/target/release/spider-tauri`, ставить у `~/.local/opt/spider-tauri`, symlink у `~/.local/bin`, іконку та `.desktop` у XDG. Root не потрібен.
 ## Size comparison (Linux amd64, виміряно 2026-07-31)
 
 | Артефакт | Electron 1.0.1 | Tauri 1.0.0 | Співвідношення |
@@ -107,6 +110,8 @@ npm run build        # tauri build
 | Unpacked / binary | dir **~317 MB** (бінарник Electron ~207 MB) | release binary **~8.7 MB** | ≈ **36×** менше (dir) / ≈ **24×** (binary) |
 
 Таuri використовує системний WebView (WebKitGTK на Linux) замість вбудованого Chromium — основна економія місця.
+
+**Linux menubar:** нативне меню бере кольори з GTK. Якщо системна тема dark/mixed — текст меню може бути білим на світлій смузі. У `main.rs` (і в `.desktop` після `install:linux`) форсується `GTK_THEME=Adwaita` + `GTK_APPLICATION_PREFER_DARK_THEME=0`, якщо змінні ще не задані користувачем.
 
 ## Типові місця для правок
 

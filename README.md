@@ -8,7 +8,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for internals. Keep docs in syn
 
 ```bash
 npm install
-npm run dev      # development
-npm run build    # production .deb
+npm run dev           # development
+npm run build         # production .deb + binary
+npm run install:linux # Manjaro/user-local: ~/.local/opt + PATH + меню
+npm run deploy:linux  # build + install
 cd src-tauri && cargo test
 ```

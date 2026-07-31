@@ -11,6 +11,8 @@
     "dev": "tauri dev",
     "prebuild": "npm run build:css",
     "build": "tauri build",
+    "install:linux": "bash scripts/install-linux.sh",
+    "deploy:linux": "npm run build && bash scripts/install-linux.sh",
     "tauri": "tauri"
   },
   "devDependencies": {
