@@ -328,17 +328,25 @@ function isExternalUrlImpl(url, scanHostname = '') {
     }
 }
 
+/** Lightweight outlink edge stub — no full page clone (see scan-store). */
 function buildOutgoingLink(ref, targetEntry) {
     const edgeHasRelMeta = Boolean(ref.rel)
         || ref.relFollowAllowed !== null
         || ref.relIndexAllowed !== null
         || Boolean(ref.relLabel);
-    return normalizeLinkEntryImpl({
-        ...targetEntry,
+    const stub = {
         url: targetEntry.url,
-        text: ref.text || targetEntry.text || '',
-        tag: ref.tag || targetEntry.tag || '',
+        status: targetEntry.status,
+        external: Boolean(targetEntry.external),
+        fetched: targetEntry.fetched ?? (
+            targetEntry.status !== ''
+            && targetEntry.status !== undefined
+            && targetEntry.status !== null
+        ),
+        contentType: targetEntry.contentType || '',
         kind: ref.kind || targetEntry.kind || '',
+        tag: ref.tag || targetEntry.tag || '',
+        text: ref.text || targetEntry.text || '',
         rel: edgeHasRelMeta ? (ref.rel || '') : (targetEntry.rel || ''),
         relFollowAllowed: edgeHasRelMeta
             ? (ref.relFollowAllowed ?? null)
@@ -347,7 +355,12 @@ function buildOutgoingLink(ref, targetEntry) {
             ? (ref.relIndexAllowed ?? null)
             : (targetEntry.relIndexAllowed ?? null),
         relLabel: edgeHasRelMeta ? (ref.relLabel || '') : (targetEntry.relLabel || ''),
-    });
+        imgAltMissing: ref.imgAltMissing === true,
+    };
+    if (ref.imgAlt !== undefined) {
+        stub.imgAlt = ref.imgAlt;
+    }
+    return stub;
 }
 
 function matchesStatusFilter(status, filter) {

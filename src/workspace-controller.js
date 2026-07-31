@@ -5,6 +5,8 @@
 const WORKSPACE_PERSIST_DELAY_MS = 200;
 /** sessionStorage cannot hold huge scans; skip to avoid multi-minute freezes. */
 const WORKSPACE_PERSIST_MAX_RESULTS = 2500;
+/** Mirror scan-handlers large-scan threshold; dump kinds are already stored. */
+const LARGE_DUMP_REINFER_THRESHOLD = 5000;
 
 function createWorkspaceController(deps) {
     const {
@@ -147,7 +149,10 @@ function createWorkspaceController(deps) {
         }
         scanStore.rebuildLatestReferrersFromResults();
         scanStore.rebuildInsertionOrderIndex();
-        reinferAllLinkKinds();
+        // Large dumps already carry kinds; reinfer All re-clones every entry (WebKit peak).
+        if (normalized.results.length <= LARGE_DUMP_REINFER_THRESHOLD) {
+            reinferAllLinkKinds();
+        }
     }
 
     function restoreWorkspaceFromSession() {
@@ -193,9 +198,19 @@ function createWorkspaceController(deps) {
     }
 
     async function applySessionDump(dump, filePath = '') {
-        const normalized = normalizeLoadedDump({ ...dump, filePath });
+        if (filePath) {
+            dump.filePath = filePath;
+        }
+        const normalized = normalizeLoadedDump(dump);
         tableFilters.resetTableFilters();
         populateScanResults(normalized);
+        // Release adopted dump arrays so GC can reclaim after populate cloned into scanResults.
+        if (Array.isArray(dump.results)) {
+            dump.results.length = 0;
+        }
+        if (Array.isArray(dump.insertionOrder)) {
+            dump.insertionOrder.length = 0;
+        }
 
         if (normalized.settings && typeof applyDumpSettings === 'function') {
             await applyDumpSettings(normalized.settings);

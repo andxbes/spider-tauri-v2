@@ -636,13 +636,25 @@ async function loadSessionDumpFromFile() {
         alert(result?.error || 'Не вдалося завантажити дамп.');
         return;
     }
+    let dumpJson = result.dumpJson || null;
+    try {
+        if (!dumpJson) {
+            dumpJson = await window.api.readSessionDumpText(result.filePath);
+        }
+    } catch (err) {
+        console.error('readSessionDumpText:', err);
+        alert('Не вдалося прочитати файл дампу (перевірте шлях у домашній теці).');
+        return;
+    }
     let dump;
     try {
-        dump = JSON.parse(result.dumpJson);
+        dump = JSON.parse(dumpJson);
     } catch {
         alert('Не вдалося розібрати файл дампу.');
         return;
     }
+    dumpJson = null;
+    result.dumpJson = null;
     await workspace.applySessionDump(dump, result.filePath || '');
 }
 
@@ -654,15 +666,30 @@ async function handleMenuLoadedDump(payload) {
     if (!canContinue) {
         return;
     }
-    // payload may carry either .dump (legacy) or .dumpJson (new fast path)
-    let dump = payload.dump;
-    if (!dump && payload.dumpJson) {
+    // Prefer path + fs read; accept legacy .dump / .dumpJson if still present.
+    let dump = payload.dump || null;
+    let dumpJson = payload.dumpJson || null;
+    if (!dump && !dumpJson && payload.filePath) {
         try {
-            dump = JSON.parse(payload.dumpJson);
+            dumpJson = await window.api.readSessionDumpText(payload.filePath);
+        } catch (err) {
+            console.error('readSessionDumpText:', err);
+            alert('Не вдалося прочитати файл дампу (перевірте шлях у домашній теці).');
+            return;
+        }
+    }
+    if (!dump && dumpJson) {
+        try {
+            dump = JSON.parse(dumpJson);
         } catch {
             alert('Не вдалося розібрати файл дампу.');
             return;
         }
+    }
+    dumpJson = null;
+    if (payload) {
+        payload.dumpJson = null;
+        payload.dump = null;
     }
     if (!dump) {
         return;

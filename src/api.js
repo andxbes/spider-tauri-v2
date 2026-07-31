@@ -5,6 +5,7 @@
 (function initSpiderApi(root) {
     const core = root.__TAURI__?.core;
     const eventApi = root.__TAURI__?.event;
+    const fsApi = root.__TAURI__?.fs;
     if (!core || !eventApi) {
         console.error('Tauri API not available (withGlobalTauri?)');
         return;
@@ -43,6 +44,20 @@
         }
     }
 
+    /** Read dump body from disk after session_load returns path-only (avoids IPC dumpJson peak). */
+    async function readSessionDumpText(filePath) {
+        if (!filePath) {
+            throw new Error('Немає шляху до файлу дампу.');
+        }
+        if (fsApi?.readTextFile) {
+            return fsApi.readTextFile(filePath);
+        }
+        // Vanilla fallback when plugin guest JS is not mounted on __TAURI__.fs
+        const arr = await invoke('plugin:fs|read_text_file', { path: filePath, options: null });
+        const bytes = arr instanceof ArrayBuffer ? new Uint8Array(arr) : Uint8Array.from(arr);
+        return new TextDecoder('utf-8').decode(bytes);
+    }
+
     root.api = {
         startSpider: (startUrl, options = {}) => {
             invoke('start_spider', { startUrl, options }).catch((err) => {
@@ -62,6 +77,7 @@
         saveSessionDumpJson: ({ startUrl, dumpJson } = {}) =>
             invoke('session_save_json', { startUrl, dumpJson }),
         loadSessionDump: () => invoke('session_load'),
+        readSessionDumpText,
         onSpiderResult: (cb) => on('spider-result', cb),
         onSpiderResultsBatch: (cb) => on('spider-results-batch', cb),
         onSpiderEnd: (cb) => on('spider-end', cb),

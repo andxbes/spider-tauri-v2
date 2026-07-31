@@ -176,14 +176,18 @@ pub async fn session_load(app: AppHandle) -> Result<Value, String> {
     let Some(FilePath::Path(path)) = file_path else {
         return Ok(serde_json::json!({ "ok": false, "canceled": true }));
     };
+    // Validate then drop the parsed tree — frontend re-reads via plugin-fs to avoid
+    // keeping serde Value + dumpJson (JSON-escaped IPC) in memory at once.
     let raw = fs::read_to_string(&path).map_err(|_| "Не вдалося прочитати JSON-файл.".to_string())?;
-    let parsed: Value =
-        serde_json::from_str(&raw).map_err(|_| "Не вдалося прочитати JSON-файл.".to_string())?;
-    validate_dump(&parsed)?;
+    {
+        let parsed: Value =
+            serde_json::from_str(&raw).map_err(|_| "Не вдалося прочитати JSON-файл.".to_string())?;
+        validate_dump(&parsed)?;
+    }
+    drop(raw);
     Ok(serde_json::json!({
         "ok": true,
         "filePath": path.to_string_lossy(),
-        "dumpJson": raw
     }))
 }
 

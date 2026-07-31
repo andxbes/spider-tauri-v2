@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (Linux GTK menu: тема як у ОС, узгоджений контраст)  
+> Останнє оновлення: 2026-07-31 (памʼять: slim outlinks cache, lighter dump load)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -113,6 +113,20 @@ npm run deploy:linux   # build + install:linux
 
 **Linux menubar:** нативне меню бере кольори з GTK. Змішані теми дають білий текст на світлій смузі. У `main.rs` перед стартом виставляється **узгоджена** `GTK_THEME` за light/dark ОС (`gsettings` color-scheme / gtk-theme, або KDE ColorScheme): наприклад `adw-gtk3-dark` / `Adwaita:dark` для dark і `adw-gtk3` / `Adwaita` для light. Якщо користувач уже задав `GTK_THEME` — не чіпаємо.
 
+## Памʼять (WebKitGTK / JSC vs Electron V8)
+
+Той самий `.spider.json` у Tauri (WebKitGTK + JSC) може займати значно більше RAM, ніж у Electron (V8): JSC сильніше «роздуває» великі object graphs.
+
+Мітигації у frontend / IPC:
+
+| Місце | Поведінка |
+|-------|-----------|
+| `scan-store` `outgoingLinksByPageCache` | Легкі edge stubs (url, status, external, fetched, kind, tag, text, rel*, imgAlt*, contentType) — **без** копії title/headers/headings/meta на кожне ребро |
+| Великий dump load (`results.length > 5000`) | `normalizeLoadedDump` приймає `results` in-place (без `cloneResultEntry`); `reinferAllLinkKinds` пропускається (kinds уже в дампі) |
+| `session_load` | Після validate повертає лише `{ ok, filePath }`; frontend читає файл через `plugin-fs` / `window.api.readSessionDumpText` і обнуляє великі рядки після `JSON.parse` |
+
+Capabilities `fs:scope`: `$HOME/**`, `$DOCUMENT/**`, `$DOWNLOAD/**`, `$DESKTOP/**`, `$APPDATA/**`.
+
 ## Типові місця для правок
 
 | Задача | Де шукати |
@@ -140,6 +154,6 @@ cd src-tauri && cargo test
 | `settings_get` / `settings_save` | `settings.json` у AppData |
 | `open_external` | Відкрити URL у браузері |
 | `get_about` | Метадані «Про програму» |
-| `session_save` / `session_save_json` / `session_load` | Дамп `.spider.json` |
+| `session_save` / `session_save_json` / `session_load` | Дамп `.spider.json` (`session_load` → path-only після validate) |
 
 Events (імена як в Electron): `spider-result`, `spider-results-batch`, `spider-progress`, `spider-referrers-update`, `spider-end`, `session-dump-request-save`, `session-dump-loaded`, `about-show`.

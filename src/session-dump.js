@@ -210,24 +210,27 @@ function buildSessionDumpPayload({
     return payload;
 }
 
+/**
+ * Normalize a loaded dump. Adopts `dump.results` in place (no deep clone) —
+ * callers own the dump and will normalize entries once in populateScanResults.
+ */
 function normalizeLoadedDump(dump) {
     if (!dump || dump.version !== SESSION_DUMP_VERSION || !Array.isArray(dump.results)) {
         throw new Error('Невірний формат файлу дампу.');
     }
 
     const insertionOrder = Array.isArray(dump.insertionOrder) && dump.insertionOrder.length > 0
-        ? [...dump.insertionOrder]
+        ? dump.insertionOrder
         : dump.results.map((item) => item.url).filter(Boolean);
 
-    const results = dump.results.map(cloneResultEntry);
     return {
         startUrl: dump.startUrl || '',
         savedAt: dump.savedAt || '',
         filePath: dump.filePath || '',
         progressAtSave: dump.progressAtSave || null,
         insertionOrder,
-        results,
-        settings: dump.settings && typeof dump.settings === 'object' ? { ...dump.settings } : null,
+        results: dump.results,
+        settings: dump.settings && typeof dump.settings === 'object' ? dump.settings : null,
     };
 }
 

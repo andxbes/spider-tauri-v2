@@ -279,17 +279,28 @@ function createScanStore(options = {}) {
         bumpDataRevision();
     }
 
+    /**
+     * Lightweight edge stub for outlinks cache — never clone the full target page
+     * (title/headers/headings/meta). WebKit/JSC amplifies per-edge object graphs.
+     */
     function buildOutgoingLink(ref, targetEntry) {
         const edgeHasRelMeta = Boolean(ref.rel)
             || ref.relFollowAllowed !== null
             || ref.relIndexAllowed !== null
             || Boolean(ref.relLabel);
-        return normalizeIncoming({
-            ...targetEntry,
+        const stub = {
             url: targetEntry.url,
-            text: ref.text || targetEntry.text || '',
-            tag: ref.tag || targetEntry.tag || '',
+            status: targetEntry.status,
+            external: Boolean(targetEntry.external),
+            fetched: targetEntry.fetched ?? (
+                targetEntry.status !== ''
+                && targetEntry.status !== undefined
+                && targetEntry.status !== null
+            ),
+            contentType: targetEntry.contentType || '',
             kind: ref.kind || targetEntry.kind || '',
+            tag: ref.tag || targetEntry.tag || '',
+            text: ref.text || targetEntry.text || '',
             rel: edgeHasRelMeta ? (ref.rel || '') : (targetEntry.rel || ''),
             relFollowAllowed: edgeHasRelMeta
                 ? (ref.relFollowAllowed ?? null)
@@ -299,8 +310,11 @@ function createScanStore(options = {}) {
                 : (targetEntry.relIndexAllowed ?? null),
             relLabel: edgeHasRelMeta ? (ref.relLabel || '') : (targetEntry.relLabel || ''),
             imgAltMissing: ref.imgAltMissing === true,
-            ...(ref.imgAlt !== undefined ? { imgAlt: ref.imgAlt } : {}),
-        });
+        };
+        if (ref.imgAlt !== undefined) {
+            stub.imgAlt = ref.imgAlt;
+        }
+        return stub;
     }
 
     function rebuildOutgoingLinksCache() {
