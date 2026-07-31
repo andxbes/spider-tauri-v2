@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (Linux menubar: force Adwaita light GTK theme)  
+> Останнє оновлення: 2026-07-31 (Linux GTK menu: тема як у ОС, узгоджений контраст)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -111,7 +111,7 @@ npm run deploy:linux   # build + install:linux
 
 Таuri використовує системний WebView (WebKitGTK на Linux) замість вбудованого Chromium — основна економія місця.
 
-**Linux menubar:** нативне меню бере кольори з GTK. Якщо системна тема dark/mixed — текст меню може бути білим на світлій смузі. У `main.rs` (і в `.desktop` після `install:linux`) форсується `GTK_THEME=Adwaita` + `GTK_APPLICATION_PREFER_DARK_THEME=0`, якщо змінні ще не задані користувачем.
+**Linux menubar:** нативне меню бере кольори з GTK. Змішані теми дають білий текст на світлій смузі. У `main.rs` перед стартом виставляється **узгоджена** `GTK_THEME` за light/dark ОС (`gsettings` color-scheme / gtk-theme, або KDE ColorScheme): наприклад `adw-gtk3-dark` / `Adwaita:dark` для dark і `adw-gtk3` / `Adwaita` для light. Якщо користувач уже задав `GTK_THEME` — не чіпаємо.
 
 ## Типові місця для правок
 

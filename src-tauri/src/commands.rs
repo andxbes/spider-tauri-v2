@@ -3,7 +3,7 @@ use crate::settings::{self, AppSettings};
 use serde::Serialize;
 use serde_json::Value;
 use std::fs;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_opener::OpenerExt;
 

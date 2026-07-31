@@ -101,7 +101,7 @@ Type=Application
 Name=$DISPLAY_NAME
 GenericName=Web Spider
 Comment=Desktop web spider (Tauri)
-Exec=env GTK_THEME=Adwaita GTK_APPLICATION_PREFER_DARK_THEME=0 $INSTALL_DIR/$APP_NAME
+Exec=$INSTALL_DIR/$APP_NAME
 Icon=$DESKTOP_ICON
 Terminal=false
 Categories=Development;Network;
