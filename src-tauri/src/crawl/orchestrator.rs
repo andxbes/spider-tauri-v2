@@ -159,7 +159,6 @@ pub async fn start_spider(app: AppHandle, start_url: String, options: SpiderOpti
     runtime().clear();
     referrers::clear();
     emit::clear_buffer();
-    network::reset_throttle();
 
     runtime().set_config(SpiderConfig {
         start_url: start_norm.clone(),

@@ -5,7 +5,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
 use rand::Rng;
 use reqwest::header::{HeaderMap, ACCEPT, ACCEPT_LANGUAGE, AUTHORIZATION, USER_AGENT};
 use reqwest::{Client, Method, Response};
@@ -51,7 +50,7 @@ impl HttpClient {
             // Redirects are followed by hand so every hop can be reported.
             .redirect(reqwest::redirect::Policy::none())
             .danger_accept_invalid_certs(false)
-            .pool_max_idle_per_host(8)
+            .pool_max_idle_per_host(50)
             .build()
             .unwrap_or_else(|_| Client::new());
         Self { client }
@@ -239,35 +238,15 @@ fn format_request_error(error: reqwest::Error) -> String {
     error.to_string()
 }
 
-/// Next moment a request may start; keeps the configured delay between
-/// requests even with several workers in flight.
-static NEXT_SLOT: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
-
-pub fn reset_throttle() {
-    *NEXT_SLOT.lock() = None;
-}
-
-/// Sleep until this worker's throttle slot, applying +/-20% jitter.
+/// Per-worker polite delay (+/-20% jitter). Independent across workers so
+/// concurrency is real; delay paces each worker, not the whole pool.
 pub async fn wait_before_request(delay_ms: u64) {
     if delay_ms == 0 {
         return;
     }
-    let wake_at = {
-        let jitter: f64 = rand::thread_rng().gen_range(0.8..1.2);
-        let spacing = Duration::from_millis(((delay_ms as f64) * jitter).round() as u64);
-        let now = Instant::now();
-        let mut slot = NEXT_SLOT.lock();
-        let start = match *slot {
-            Some(next) if next > now => next,
-            _ => now,
-        };
-        *slot = Some(start + spacing);
-        start
-    };
-    let now = Instant::now();
-    if wake_at > now {
-        tokio::time::sleep(wake_at - now).await;
-    }
+    let jitter: f64 = rand::thread_rng().gen_range(0.8..1.2);
+    let wait = Duration::from_millis(((delay_ms as f64) * jitter).round() as u64);
+    tokio::time::sleep(wait).await;
 }
 
 /// Fetch and cache the robots.txt for an origin. `None` means "unavailable",

@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (памʼять: slim outlinks cache, lighter dump load)  
+> Останнє оновлення: 2026-07-31 (delay: per-worker, не глобальний throttle)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -74,7 +74,7 @@ api.js listen → Renderer
 
 Семантика як у spider-electron: BFS FIFO, optional sitemap seed, robots.txt, manual redirects (max 20), probe для медіа/зовнішніх, IPC/event batching, pause/resume/stop.
 
-Константи: HTTP timeout 20s (sitemap 60s), delay default 500ms ±20% jitter, concurrency 1–50 (default 3), HTML parse via `spawn_blocking`.
+Константи: HTTP timeout 20s (sitemap 60s), delay default 500ms ±20% jitter **на кожен worker** (не глобальна черга слотів — інакше concurrency ≈ 1), concurrency 1–50 (default 3), HTML parse via `spawn_blocking`.
 
 ## Налаштування
 
