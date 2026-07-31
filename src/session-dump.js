@@ -150,6 +150,8 @@ function cloneResultEntryCompact(data) {
  * passing a large JS object over IPC. The string is written directly to disk
  * by the main process without any re-serialisation.
  * Uses the compact entry format (no responseHeaders / redirectChain).
+ *
+ * @deprecated Prefer streamSessionDumpSave — full stringify OOMs WebKit on large scans.
  */
 function buildSessionDumpJson({
     scanResults,
@@ -180,6 +182,112 @@ function buildSessionDumpJson({
         payload.settings = { ...settings };
     }
     return JSON.stringify(payload);
+}
+
+const DUMP_WRITE_BATCH = 80;
+
+function yieldToUi() {
+    return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Stream a compact dump to disk via small IPC chunks (pick path → append batches).
+ * Avoids one giant JSON.stringify + IPC transfer that crashes WebKit/JSC.
+ *
+ * @param {object} opts
+ * @param {(startUrl: string) => Promise<{ok?: boolean, canceled?: boolean, filePath?: string}>} opts.pickPath
+ * @param {(args: {path: string, data: string, truncate: boolean}) => Promise<unknown>} opts.writeChunk
+ * @param {(msg: string) => void} [opts.onProgress]
+ */
+async function streamSessionDumpSave({
+    scanResults,
+    insertionOrder,
+    startUrl,
+    uiState,
+    lastScanProgress,
+    settings,
+    pickPath,
+    writeChunk,
+    onProgress,
+}) {
+    const pick = await pickPath(startUrl || '');
+    if (pick?.canceled || !pick?.ok || !pick?.filePath) {
+        return { ok: false, canceled: true };
+    }
+    const filePath = pick.filePath;
+    const urls = insertionOrder.filter((url) => scanResults.has(url));
+    const resultCount = urls.length;
+
+    const header = {
+        version: SESSION_DUMP_VERSION,
+        app: 'spider-tauri',
+        savedAt: new Date().toISOString(),
+        startUrl: startUrl || '',
+        uiStateAtSave: uiState,
+        progressAtSave: lastScanProgress ? { ...lastScanProgress } : null,
+    };
+    if (settings && typeof settings === 'object') {
+        header.settings = { ...settings };
+    }
+
+    // Open object + results array; entries appended one batch at a time.
+    let headerJson = JSON.stringify(header);
+    headerJson = `${headerJson.slice(0, -1)},"results":[`;
+    await writeChunk({ path: filePath, data: headerJson, truncate: true });
+
+    let wroteResult = false;
+    for (let i = 0; i < urls.length; i += DUMP_WRITE_BATCH) {
+        const slice = urls.slice(i, i + DUMP_WRITE_BATCH);
+        const parts = [];
+        for (const url of slice) {
+            const data = scanResults.get(url);
+            if (!data) {
+                continue;
+            }
+            parts.push(JSON.stringify(cloneResultEntryCompact(data)));
+        }
+        if (parts.length === 0) {
+            continue;
+        }
+        const prefix = wroteResult ? ',' : '';
+        wroteResult = true;
+        await writeChunk({
+            path: filePath,
+            data: prefix + parts.join(','),
+            truncate: false,
+        });
+        if (typeof onProgress === 'function') {
+            onProgress(`Зберігаю дамп… ${Math.min(i + DUMP_WRITE_BATCH, resultCount)}/${resultCount}`);
+        }
+        await yieldToUi();
+    }
+
+    // Close results, then stream insertionOrder in batches too (can be large).
+    await writeChunk({
+        path: filePath,
+        data: `],"resultCount":${resultCount},"insertionOrder":[`,
+        truncate: false,
+    });
+
+    let wroteOrder = false;
+    for (let i = 0; i < urls.length; i += DUMP_WRITE_BATCH) {
+        const slice = urls.slice(i, i + DUMP_WRITE_BATCH);
+        if (slice.length === 0) {
+            continue;
+        }
+        const parts = slice.map((url) => JSON.stringify(url));
+        const prefix = wroteOrder ? ',' : '';
+        wroteOrder = true;
+        await writeChunk({
+            path: filePath,
+            data: prefix + parts.join(','),
+            truncate: false,
+        });
+        await yieldToUi();
+    }
+
+    await writeChunk({ path: filePath, data: ']}', truncate: false });
+    return { ok: true, filePath, resultCount };
 }
 
 /** @deprecated Use buildSessionDumpJson for new saves; kept for tests / other callers. */
@@ -333,6 +441,7 @@ if (typeof module !== 'undefined' && module.exports) {
         cloneResultEntry,
         cloneResultEntryCompact,
         buildSessionDumpJson,
+        streamSessionDumpSave,
         buildSessionDumpPayload,
         normalizeLoadedDump,
         buildWorkspaceSnapshot,

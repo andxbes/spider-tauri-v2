@@ -1,5 +1,6 @@
 mod commands;
 mod crawl;
+mod dump_export;
 mod dump_import;
 mod settings;
 
@@ -106,6 +107,8 @@ pub fn run() {
             commands::session_save,
             commands::session_save_json,
             commands::session_load,
+            dump_export::session_save_pick,
+            dump_export::session_dump_write_chunk,
             dump_import::session_import,
         ])
         .run(tauri::generate_context!())

@@ -93,6 +93,14 @@
         saveSessionDump: (payload) => invoke('session_save', { payload }),
         saveSessionDumpJson: ({ startUrl, dumpJson } = {}) =>
             invoke('session_save_json', { startUrl, dumpJson }),
+        pickSessionDumpSave: (startUrl) =>
+            invoke('session_save_pick', { startUrl: startUrl || '' }),
+        writeSessionDumpChunk: ({ path, data, truncate } = {}) =>
+            invoke('session_dump_write_chunk', {
+                path,
+                data,
+                truncate: Boolean(truncate),
+            }),
         loadSessionDump: () => invoke('session_import'),
         readSessionDumpText,
         showAbout: () => emitLocal('about-show'),

@@ -599,29 +599,39 @@ async function saveSessionDumpToFile() {
         alert('Немає результатів для збереження.');
         return;
     }
-    const settings = typeof collectDumpSettings === 'function'
-        ? await collectDumpSettings()
-        : null;
-    const jsonString = buildSessionDumpJson({
-        scanResults: scanStore.scanResults,
-        insertionOrder: scanStore.insertionOrder,
-        startUrl: urlInput.value.trim(),
-        uiState,
-        lastScanProgress,
-        settings,
-    });
-    const result = await window.api.saveSessionDumpJson({
-        startUrl: urlInput.value.trim(),
-        dumpJson: jsonString,
-    });
-    if (result?.canceled) {
-        return;
+    try {
+        const settings = typeof collectDumpSettings === 'function'
+            ? await collectDumpSettings()
+            : null;
+        statusText.textContent = 'Зберігаю дамп…';
+        const result = await streamSessionDumpSave({
+            scanResults: scanStore.scanResults,
+            insertionOrder: scanStore.insertionOrder,
+            startUrl: urlInput.value.trim(),
+            uiState,
+            lastScanProgress,
+            settings,
+            pickPath: (startUrl) => window.api.pickSessionDumpSave(startUrl),
+            writeChunk: (args) => window.api.writeSessionDumpChunk(args),
+            onProgress: (msg) => {
+                statusText.textContent = msg;
+            },
+        });
+        if (result?.canceled) {
+            statusText.textContent = lastScanProgress
+                ? (statusText.textContent || 'Готово.')
+                : 'Готово.';
+            return;
+        }
+        if (!result?.ok) {
+            alert(result?.error || 'Не вдалося зберегти дамп.');
+            return;
+        }
+        statusText.textContent = `Дамп збережено: ${result.filePath}`;
+    } catch (err) {
+        console.error('saveSessionDumpToFile:', err);
+        alert(String(err?.message || err || 'Не вдалося зберегти дамп.'));
     }
-    if (!result?.ok) {
-        alert(result?.error || 'Не вдалося зберегти дамп.');
-        return;
-    }
-    statusText.textContent = `Дамп збережено: ${result.filePath}`;
 }
 
 async function loadSessionDumpFromFile() {

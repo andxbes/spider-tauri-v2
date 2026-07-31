@@ -73,21 +73,7 @@ pub fn spider_stop(app: AppHandle) {
 }
 
 fn default_dump_name(start_url: &str) -> String {
-    let host = url::Url::parse(start_url)
-        .ok()
-        .and_then(|u| u.host_str().map(|h| h.to_string()))
-        .unwrap_or_else(|| "scan".into())
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-    let stamp = chrono::Local::now().format("%Y-%m-%d-%H-%M-%S");
-    format!("spider_{host}_{stamp}.spider.json")
+    crate::dump_export::default_dump_name(start_url)
 }
 
 #[allow(dead_code)]

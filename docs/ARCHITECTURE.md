@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (delay: per-worker, не глобальний throttle)  
+> Останнє оновлення: 2026-07-31 (save dump: stream chunks, без IPC гіганта)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -124,6 +124,7 @@ npm run deploy:linux   # build + install:linux
 | `getReferrersForUrl` / counts | Raw referrer arrays (no per-edge normalize clone); `getOutgoingCounts` walks href only |
 | Large dump load (`results.length > 5000`) | In-place adopt (no `normalizeLinkEntry` spreads); skip reinfer; strip headers/chains; clear source `results` array |
 | `session_import` | Rust читає/парсить дамп (без headers/chains), стрімить батчі в UI — **без** `JSON.parse` 300MB+ у WebKit |
+| `session_save_pick` + `session_dump_write_chunk` | Save: діалог шляху, потім append батчами з JS — **без** одного `JSON.stringify`+IPC на весь дамп |
 | `session_load` | Legacy path-only (залишено); UI відкриває дамп через `session_import` |
 
 Capabilities `fs:scope`: `$HOME/**`, `$DOCUMENT/**`, `$DOWNLOAD/**`, `$DESKTOP/**`, `$APPDATA/**`.
@@ -155,6 +156,8 @@ cd src-tauri && cargo test
 | `settings_get` / `settings_save` | `settings.json` у AppData |
 | `open_external` | Відкрити URL у браузері |
 | `get_about` | Метадані «Про програму» |
-| `session_save` / `session_save_json` / `session_load` | Дамп `.spider.json` (`session_load` → path-only після validate) |
+| `session_save` / `session_save_json` / `session_load` | Legacy dump helpers |
+| `session_save_pick` / `session_dump_write_chunk` | Стрім-збереження `.spider.json` |
+| `session_import` | Стрім-завантаження дампу |
 
 Events (імена як в Electron): `spider-result`, `spider-results-batch`, `spider-progress`, `spider-referrers-update`, `spider-end`, `session-dump-request-save`, `session-dump-loaded`, `about-show`.
