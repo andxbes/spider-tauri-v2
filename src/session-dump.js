@@ -171,9 +171,10 @@ function buildSessionDumpJson({
         startUrl: startUrl || '',
         uiStateAtSave: uiState,
         progressAtSave: lastScanProgress ? { ...lastScanProgress } : null,
-        insertionOrder: [...insertionOrder],
+        // Put results before insertionOrder so lightweight header peeks still work.
         results,
         resultCount: results.length,
+        insertionOrder: [...insertionOrder],
     };
     if (settings && typeof settings === 'object') {
         payload.settings = { ...settings };

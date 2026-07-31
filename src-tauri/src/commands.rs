@@ -90,6 +90,7 @@ fn default_dump_name(start_url: &str) -> String {
     format!("spider_{host}_{stamp}.spider.json")
 }
 
+#[allow(dead_code)]
 fn validate_dump(data: &Value) -> Result<(), String> {
     let obj = data.as_object().ok_or("Файл порожній або пошкоджений.")?;
     let version = obj.get("version").and_then(|v| v.as_u64()).unwrap_or(0);
@@ -176,15 +177,12 @@ pub async fn session_load(app: AppHandle) -> Result<Value, String> {
     let Some(FilePath::Path(path)) = file_path else {
         return Ok(serde_json::json!({ "ok": false, "canceled": true }));
     };
-    // Validate then drop the parsed tree — frontend re-reads via plugin-fs to avoid
-    // keeping serde Value + dumpJson (JSON-escaped IPC) in memory at once.
-    let raw = fs::read_to_string(&path).map_err(|_| "Не вдалося прочитати JSON-файл.".to_string())?;
-    {
-        let parsed: Value =
-            serde_json::from_str(&raw).map_err(|_| "Не вдалося прочитати JSON-файл.".to_string())?;
-        validate_dump(&parsed)?;
+    // Do NOT parse the whole dump here (multi-GB peak). Also do not require
+    // "results" in the first N KB — large dumps put a huge insertionOrder first.
+    // Frontend validates after a single JSON.parse.
+    if !path.is_file() {
+        return Err("Не вдалося прочитати JSON-файл.".into());
     }
-    drop(raw);
     Ok(serde_json::json!({
         "ok": true,
         "filePath": path.to_string_lossy(),

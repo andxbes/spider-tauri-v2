@@ -1,5 +1,6 @@
 mod commands;
 mod crawl;
+mod dump_import;
 mod settings;
 
 use tauri::AppHandle;
@@ -45,16 +46,19 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
         MENU_DUMP_LOAD => {
             let app = app.clone();
             tauri::async_runtime::spawn(async move {
-                match commands::session_load(app.clone()).await {
+                match dump_import::session_import(app.clone()).await {
                     Ok(payload) => {
                         if payload.get("canceled").and_then(|v| v.as_bool()) == Some(true) {
                             return;
                         }
-                        let _ = app.emit("session-dump-loaded", payload);
+                        // Batches already streamed via session-dump-import-* events.
+                        if payload.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+                            let _ = app.emit("session-dump-import-done", payload);
+                        }
                     }
                     Err(error) => {
                         let _ = app.emit(
-                            "session-dump-loaded",
+                            "session-dump-import-done",
                             serde_json::json!({ "ok": false, "error": error }),
                         );
                     }
@@ -102,6 +106,7 @@ pub fn run() {
             commands::session_save,
             commands::session_save_json,
             commands::session_load,
+            dump_import::session_import,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

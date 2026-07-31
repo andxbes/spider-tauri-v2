@@ -22,6 +22,9 @@
         'spider-referrers-update': [],
         'session-dump-request-save': [],
         'session-dump-loaded': [],
+        'session-dump-import-start': [],
+        'session-dump-import-batch': [],
+        'session-dump-import-done': [],
         'about-show': [],
     };
 
@@ -90,7 +93,7 @@
         saveSessionDump: (payload) => invoke('session_save', { payload }),
         saveSessionDumpJson: ({ startUrl, dumpJson } = {}) =>
             invoke('session_save_json', { startUrl, dumpJson }),
-        loadSessionDump: () => invoke('session_load'),
+        loadSessionDump: () => invoke('session_import'),
         readSessionDumpText,
         showAbout: () => emitLocal('about-show'),
         onSpiderResult: (cb) => on('spider-result', cb),
@@ -100,6 +103,9 @@
         onSpiderReferrersUpdate: (cb) => on('spider-referrers-update', cb),
         onSessionDumpRequestSave: (cb) => on('session-dump-request-save', cb),
         onSessionDumpLoaded: (cb) => on('session-dump-loaded', cb),
+        onSessionDumpImportStart: (cb) => on('session-dump-import-start', cb),
+        onSessionDumpImportBatch: (cb) => on('session-dump-import-batch', cb),
+        onSessionDumpImportDone: (cb) => on('session-dump-import-done', cb),
         onAboutShow: (cb) => on('about-show', cb),
     };
 })(window);

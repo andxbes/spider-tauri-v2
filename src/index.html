@@ -67,30 +67,53 @@
               Заново сканувати
             </button>
           </div>
-          <button
-            type="button"
-            id="saveDumpButton"
-            class="px-3 py-2 text-sm text-zinc-600 border border-zinc-300 rounded-md hover:bg-zinc-50"
-            title="Зберегти дамп (Ctrl+Shift+S)"
-          >
-            Зберегти дамп
-          </button>
-          <button
-            type="button"
-            id="loadDumpButton"
-            class="px-3 py-2 text-sm text-zinc-600 border border-zinc-300 rounded-md hover:bg-zinc-50"
-            title="Завантажити дамп (Ctrl+Shift+O)"
-          >
-            Відкрити дамп
-          </button>
-          <button
-            type="button"
-            id="openAboutButton"
-            class="px-3 py-2 text-sm text-zinc-600 border border-zinc-300 rounded-md hover:bg-zinc-50"
-            title="Про програму"
-          >
-            Про програму
-          </button>
+          <div class="relative" id="appMenuWrap">
+            <button
+              type="button"
+              id="appMenuButton"
+              class="px-3 py-2 text-sm text-zinc-600 border border-zinc-300 rounded-md hover:bg-zinc-50"
+              title="Меню"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="appMenuDropdown"
+            >
+              ☰
+            </button>
+            <div
+              id="appMenuDropdown"
+              class="hidden absolute right-0 top-full z-50 mt-1 min-w-[12rem] rounded-md border border-zinc-200 bg-white py-1 shadow-md"
+              role="menu"
+              aria-labelledby="appMenuButton"
+            >
+              <button
+                type="button"
+                id="saveDumpButton"
+                role="menuitem"
+                class="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                title="Ctrl+Shift+S"
+              >
+                Зберегти дамп
+              </button>
+              <button
+                type="button"
+                id="loadDumpButton"
+                role="menuitem"
+                class="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                title="Ctrl+Shift+O"
+              >
+                Відкрити дамп
+              </button>
+              <div class="my-1 border-t border-zinc-200" role="separator"></div>
+              <button
+                type="button"
+                id="openAboutButton"
+                role="menuitem"
+                class="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+              >
+                Про програму
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             id="openSettingsButton"

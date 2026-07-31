@@ -629,45 +629,36 @@ async function loadSessionDumpFromFile() {
     if (!canContinue) {
         return;
     }
-    const result = await window.api.loadSessionDump();
-    if (result?.canceled) {
-        return;
-    }
-    if (!result?.ok) {
-        alert(result?.error || 'Не вдалося завантажити дамп.');
-        return;
-    }
-    let dumpJson = result.dumpJson || null;
     try {
-        if (!dumpJson) {
-            dumpJson = await window.api.readSessionDumpText(result.filePath);
+        const result = await window.api.loadSessionDump();
+        if (result?.canceled) {
+            return;
         }
+        if (result?.ok === false) {
+            alert(result?.error || 'Не вдалося завантажити дамп.');
+        }
+        // Batches arrive via session-dump-import-* events while invoke runs.
     } catch (err) {
-        console.error('readSessionDumpText:', err);
-        alert('Не вдалося прочитати файл дампу (перевірте шлях у домашній теці).');
-        return;
+        console.error('loadSessionDump:', err);
+        alert(String(err?.message || err || 'Не вдалося завантажити дамп.'));
     }
-    let dump;
-    try {
-        dump = JSON.parse(dumpJson);
-    } catch {
-        alert('Не вдалося розібрати файл дампу.');
-        return;
-    }
-    dumpJson = null;
-    result.dumpJson = null;
-    await workspace.applySessionDump(dump, result.filePath || '');
 }
 
 async function handleMenuLoadedDump(payload) {
+    // Legacy path (path-only + fs read). Prefer Rust import events.
     if (!payload?.ok) {
+        if (payload?.error) {
+            alert(payload.error);
+        }
+        return;
+    }
+    if (payload.resultCount != null && !payload.filePath) {
         return;
     }
     const canContinue = await ensureCanReplaceSession('Завантаження дампу');
     if (!canContinue) {
         return;
     }
-    // Prefer path + fs read; accept legacy .dump / .dumpJson if still present.
     let dump = payload.dump || null;
     let dumpJson = payload.dumpJson || null;
     if (!dump && !dumpJson && payload.filePath) {
@@ -675,7 +666,7 @@ async function handleMenuLoadedDump(payload) {
             dumpJson = await window.api.readSessionDumpText(payload.filePath);
         } catch (err) {
             console.error('readSessionDumpText:', err);
-            alert('Не вдалося прочитати файл дампу (перевірте шлях у домашній теці).');
+            alert(`Не вдалося прочитати файл дампу:\n${payload.filePath}\n\n${err?.message || err}`);
             return;
         }
     }
@@ -695,20 +686,74 @@ async function handleMenuLoadedDump(payload) {
     if (!dump) {
         return;
     }
-    await workspace.applySessionDump(dump, payload.filePath || '');
+    try {
+        await workspace.applySessionDump(dump, payload.filePath || '');
+    } catch (err) {
+        console.error('applySessionDump:', err);
+        alert(String(err?.message || err || 'Не вдалося застосувати дамп.'));
+    }
 }
 
 window.api.onSessionDumpRequestSave(() => saveSessionDumpToFile());
 window.api.onSessionDumpLoaded((payload) => handleMenuLoadedDump(payload));
+window.api.onSessionDumpImportStart((meta) => {
+    workspace.beginRustDumpImport(meta || {});
+});
+window.api.onSessionDumpImportBatch((payload) => {
+    workspace.appendRustDumpBatch(payload?.entries || []);
+});
+window.api.onSessionDumpImportDone((payload) => {
+    workspace.finishRustDumpImport(payload || { ok: true });
+});
 
 document.getElementById('saveDumpButton')?.addEventListener('click', () => {
+    closeAppMenu();
     void saveSessionDumpToFile();
 });
 document.getElementById('loadDumpButton')?.addEventListener('click', () => {
+    closeAppMenu();
     void loadSessionDumpFromFile();
 });
 document.getElementById('openAboutButton')?.addEventListener('click', () => {
+    closeAppMenu();
     window.api.showAbout();
+});
+
+const appMenuButton = document.getElementById('appMenuButton');
+const appMenuDropdown = document.getElementById('appMenuDropdown');
+const appMenuWrap = document.getElementById('appMenuWrap');
+
+function closeAppMenu() {
+    if (!appMenuDropdown || !appMenuButton) {
+        return;
+    }
+    appMenuDropdown.classList.add('hidden');
+    appMenuButton.setAttribute('aria-expanded', 'false');
+}
+
+function toggleAppMenu() {
+    if (!appMenuDropdown || !appMenuButton) {
+        return;
+    }
+    const open = appMenuDropdown.classList.toggle('hidden') === false;
+    appMenuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+appMenuButton?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleAppMenu();
+});
+
+document.addEventListener('click', (event) => {
+    if (!appMenuWrap?.contains(event.target)) {
+        closeAppMenu();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        closeAppMenu();
+    }
 });
 
 window.addEventListener('keydown', (event) => {

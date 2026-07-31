@@ -187,17 +187,33 @@ function createScanStore(options = {}) {
         invalidateOutgoingLinksCache();
     }
 
-    function getReferrersForUrl(url) {
-        let raw = [];
+    function getRawReferrersForUrl(url) {
         if (latestReferrersByUrl.has(url)) {
-            raw = latestReferrersByUrl.get(url);
-        } else {
-            const data = scanResults.get(url);
-            if (data?.referrers?.length) {
-                raw = data.referrers;
-            }
+            return latestReferrersByUrl.get(url) || [];
         }
-        return raw.map(normalizeReferrerEntry).filter((entry) => entry.href);
+        const data = scanResults.get(url);
+        return data?.referrers?.length ? data.referrers : [];
+    }
+
+    /**
+     * Return referrers without allocating a fresh object per edge on every call.
+     * Dump/crawl data is already object-shaped; only legacy string refs are normalized once.
+     */
+    function getReferrersForUrl(url) {
+        const raw = getRawReferrersForUrl(url);
+        if (!raw.length) {
+            return raw;
+        }
+        if (typeof raw[0] !== 'string') {
+            return raw;
+        }
+        const normalized = raw.map(normalizeReferrerEntry).filter((entry) => entry.href);
+        latestReferrersByUrl.set(url, normalized);
+        const data = scanResults.get(url);
+        if (data) {
+            data.referrers = normalized;
+        }
+        return normalized;
     }
 
     function rebuildLatestReferrersFromResults() {
@@ -320,24 +336,29 @@ function createScanStore(options = {}) {
     }
 
     /**
-     * Counts only — used by table columns. Avoids allocating one JS object per graph edge
-     * (that was the multi-GB WebKit spike).
+     * Counts only — used by table columns. Walks raw referrer arrays without
+     * normalizing/cloning edges (that clone was the multi-GB WebKit spike).
      */
     function rebuildOutgoingCountsCache() {
         const counts = new Map();
         const host = getScanHostname();
         for (const entry of scanResults.values()) {
-            for (const ref of getReferrersForUrl(entry.url)) {
-                if (!ref.href) {
+            const refs = getRawReferrersForUrl(entry.url);
+            const targetIsExternal = entry.external === true
+                || (host && isExternalByHost(entry.url, host));
+            for (let i = 0; i < refs.length; i += 1) {
+                const ref = refs[i];
+                const href = typeof ref === 'string' ? ref : ref?.href;
+                if (!href) {
                     continue;
                 }
-                let bucket = counts.get(ref.href);
+                let bucket = counts.get(href);
                 if (!bucket) {
                     bucket = { linkCount: 0, internalCount: 0, externalCount: 0 };
-                    counts.set(ref.href, bucket);
+                    counts.set(href, bucket);
                 }
                 bucket.linkCount += 1;
-                if (entry.external === true || (host && isExternalByHost(entry.url, host))) {
+                if (targetIsExternal) {
                     bucket.externalCount += 1;
                 } else {
                     bucket.internalCount += 1;
@@ -376,9 +397,15 @@ function createScanStore(options = {}) {
         }
         const list = [];
         for (const entry of scanResults.values()) {
-            for (const ref of getReferrersForUrl(entry.url)) {
-                if (ref.href === pageUrl) {
-                    list.push(buildOutgoingLink(ref, entry));
+            const refs = getRawReferrersForUrl(entry.url);
+            for (let i = 0; i < refs.length; i += 1) {
+                const ref = refs[i];
+                const href = typeof ref === 'string' ? ref : ref?.href;
+                if (href === pageUrl) {
+                    list.push(buildOutgoingLink(
+                        typeof ref === 'string' ? { href: ref } : ref,
+                        entry,
+                    ));
                 }
             }
         }

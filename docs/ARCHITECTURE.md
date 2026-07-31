@@ -121,10 +121,10 @@ npm run deploy:linux   # build + install:linux
 
 | Місце | Поведінка |
 |-------|-----------|
-| `scan-store` counts cache | Таблиця бере `getOutgoingCounts` (числа), **без** матеріалузації всіх outlink-обʼєктів на весь граф |
-| `getOutgoingLinksFrom` | Ліниво, лише для однієї сторінки (деталь / CSV рядка); LRU ≈ 64 сторінки |
-| Великий dump load (`results.length > 5000`) | `normalizeLoadedDump` in-place; `reinferAllLinkKinds` skip; `responseHeaders` / `redirectChain` обнуляються після ingest |
-| `session_load` | Повертає `{ ok, filePath }`; frontend читає через `plugin-fs` і обнуляє великі рядки після `JSON.parse` |
+| `getReferrersForUrl` / counts | Raw referrer arrays (no per-edge normalize clone); `getOutgoingCounts` walks href only |
+| Large dump load (`results.length > 5000`) | In-place adopt (no `normalizeLinkEntry` spreads); skip reinfer; strip headers/chains; clear source `results` array |
+| `session_import` | Rust читає/парсить дамп (без headers/chains), стрімить батчі в UI — **без** `JSON.parse` 300MB+ у WebKit |
+| `session_load` | Legacy path-only (залишено); UI відкриває дамп через `session_import` |
 
 Capabilities `fs:scope`: `$HOME/**`, `$DOCUMENT/**`, `$DOWNLOAD/**`, `$DESKTOP/**`, `$APPDATA/**`.
 
