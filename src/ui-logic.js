@@ -1335,13 +1335,28 @@ function decodeUrlAttr(encoded) {
 
 function getRowMetricsImpl(data, helpers = {}) {
     const getReferrersForUrl = helpers.getReferrersForUrl || (() => []);
+    const getOutgoingCounts = helpers.getOutgoingCounts;
     const getOutgoingLinksFrom = helpers.getOutgoingLinksFrom || (() => []);
     const isDiscoveredOnlyFn = helpers.isDiscoveredOnly || isDiscoveredOnly;
     const isExternalLinkFn = helpers.isExternalLink || ((entry) => isExternalLinkImpl(entry, helpers.scanHostname || ''));
     const scanHostname = helpers.scanHostname || '';
-    const outgoing = isDiscoveredOnlyFn(data) ? [] : getOutgoingLinksFrom(data.url);
+    const inCount = getReferrersForUrl(data.url).length;
+    if (isDiscoveredOnlyFn(data)) {
+        return { inCount, linkCount: 0, internalCount: 0, externalCount: 0 };
+    }
+    // Prefer O(1) counts — building full outlink arrays for every visible row blew WebKit RAM.
+    if (typeof getOutgoingCounts === 'function') {
+        const counts = getOutgoingCounts(data.url);
+        return {
+            inCount,
+            linkCount: counts.linkCount,
+            internalCount: counts.internalCount,
+            externalCount: counts.externalCount,
+        };
+    }
+    const outgoing = getOutgoingLinksFrom(data.url);
     return {
-        inCount: getReferrersForUrl(data.url).length,
+        inCount,
         linkCount: outgoing.length,
         internalCount: outgoing.filter((link) => !isExternalLinkFn(link, scanHostname)).length,
         externalCount: outgoing.filter((link) => isExternalLinkFn(link, scanHostname)).length,

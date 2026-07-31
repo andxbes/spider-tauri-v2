@@ -58,6 +58,20 @@
         return new TextDecoder('utf-8').decode(bytes);
     }
 
+    function emitLocal(channel, payload) {
+        const list = listeners[channel];
+        if (!list) {
+            return;
+        }
+        list.forEach((cb) => {
+            try {
+                cb(payload);
+            } catch (err) {
+                console.error(`api emitLocal ${channel}:`, err);
+            }
+        });
+    }
+
     root.api = {
         startSpider: (startUrl, options = {}) => {
             invoke('start_spider', { startUrl, options }).catch((err) => {
@@ -78,6 +92,7 @@
             invoke('session_save_json', { startUrl, dumpJson }),
         loadSessionDump: () => invoke('session_load'),
         readSessionDumpText,
+        showAbout: () => emitLocal('about-show'),
         onSpiderResult: (cb) => on('spider-result', cb),
         onSpiderResultsBatch: (cb) => on('spider-results-batch', cb),
         onSpiderEnd: (cb) => on('spider-end', cb),

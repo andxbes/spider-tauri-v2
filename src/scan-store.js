@@ -87,8 +87,10 @@ function createScanStore(options = {}) {
     let latestReferrersByUrl = new Map();
     let latestRobotsByUrl = new Map();
     let duplicateCountsCache = null;
-    /** @type {Map<string, object[]> | null} */
+    /** @type {Map<string, object[]> | null} per-page outlinks (built lazily, one page at a time) */
     let outgoingLinksByPageCache = null;
+    /** @type {Map<string, { linkCount: number, internalCount: number, externalCount: number }> | null} */
+    let outgoingCountsByPageCache = null;
     let scanHostname = '';
 
     const getScanHostname = options.getScanHostname || (() => scanHostname);
@@ -112,6 +114,7 @@ function createScanStore(options = {}) {
 
     function invalidateOutgoingLinksCache() {
         outgoingLinksByPageCache = null;
+        outgoingCountsByPageCache = null;
     }
 
     function invalidateDuplicateCounts() {
@@ -181,7 +184,7 @@ function createScanStore(options = {}) {
         insertionOrder.length = 0;
         insertionOrderIndex.clear();
         dataRevision = 0;
-        outgoingLinksByPageCache = null;
+        invalidateOutgoingLinksCache();
     }
 
     function getReferrersForUrl(url) {
@@ -280,8 +283,7 @@ function createScanStore(options = {}) {
     }
 
     /**
-     * Lightweight edge stub for outlinks cache — never clone the full target page
-     * (title/headers/headings/meta). WebKit/JSC amplifies per-edge object graphs.
+     * Lightweight edge stub for outlinks — never clone the full target page.
      */
     function buildOutgoingLink(ref, targetEntry) {
         const edgeHasRelMeta = Boolean(ref.rel)
@@ -317,27 +319,76 @@ function createScanStore(options = {}) {
         return stub;
     }
 
-    function rebuildOutgoingLinksCache() {
-        const cache = new Map();
+    /**
+     * Counts only — used by table columns. Avoids allocating one JS object per graph edge
+     * (that was the multi-GB WebKit spike).
+     */
+    function rebuildOutgoingCountsCache() {
+        const counts = new Map();
+        const host = getScanHostname();
         for (const entry of scanResults.values()) {
             for (const ref of getReferrersForUrl(entry.url)) {
                 if (!ref.href) {
                     continue;
                 }
-                if (!cache.has(ref.href)) {
-                    cache.set(ref.href, []);
+                let bucket = counts.get(ref.href);
+                if (!bucket) {
+                    bucket = { linkCount: 0, internalCount: 0, externalCount: 0 };
+                    counts.set(ref.href, bucket);
                 }
-                cache.get(ref.href).push(buildOutgoingLink(ref, entry));
+                bucket.linkCount += 1;
+                if (entry.external === true || (host && isExternalByHost(entry.url, host))) {
+                    bucket.externalCount += 1;
+                } else {
+                    bucket.internalCount += 1;
+                }
             }
         }
-        outgoingLinksByPageCache = cache;
+        outgoingCountsByPageCache = counts;
     }
 
+    function isExternalByHost(url, host) {
+        try {
+            return new URL(url).hostname !== host;
+        } catch {
+            return Boolean(host);
+        }
+    }
+
+    function getOutgoingCounts(pageUrl) {
+        if (!outgoingCountsByPageCache) {
+            rebuildOutgoingCountsCache();
+        }
+        return outgoingCountsByPageCache.get(pageUrl) || {
+            linkCount: 0,
+            internalCount: 0,
+            externalCount: 0,
+        };
+    }
+
+    /** Build outlinks for a single page (detail panel / CSV for one row). */
     function getOutgoingLinksFrom(pageUrl) {
         if (!outgoingLinksByPageCache) {
-            rebuildOutgoingLinksCache();
+            outgoingLinksByPageCache = new Map();
         }
-        return outgoingLinksByPageCache.get(pageUrl) || [];
+        if (outgoingLinksByPageCache.has(pageUrl)) {
+            return outgoingLinksByPageCache.get(pageUrl);
+        }
+        const list = [];
+        for (const entry of scanResults.values()) {
+            for (const ref of getReferrersForUrl(entry.url)) {
+                if (ref.href === pageUrl) {
+                    list.push(buildOutgoingLink(ref, entry));
+                }
+            }
+        }
+        // Bound cache size so opening many detail panels does not keep all pages forever.
+        if (outgoingLinksByPageCache.size > 64) {
+            const firstKey = outgoingLinksByPageCache.keys().next().value;
+            outgoingLinksByPageCache.delete(firstKey);
+        }
+        outgoingLinksByPageCache.set(pageUrl, list);
+        return list;
     }
 
     function reinferAllLinkKinds() {
@@ -373,6 +424,7 @@ function createScanStore(options = {}) {
         clearData,
         getReferrersForUrl,
         getOutgoingLinksFrom,
+        getOutgoingCounts,
         rebuildLatestReferrersFromResults,
         applyReferrersUpdate,
         materializeDiscoveredFromReferrers,

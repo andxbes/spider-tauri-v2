@@ -149,6 +149,17 @@ function createWorkspaceController(deps) {
         }
         scanStore.rebuildLatestReferrersFromResults();
         scanStore.rebuildInsertionOrderIndex();
+        // Drop bulky per-URL arrays after graph is rebuilt — detail panel can live without them on huge dumps.
+        if (scanStore.scanResults.size > LARGE_DUMP_REINFER_THRESHOLD) {
+            for (const entry of scanStore.scanResults.values()) {
+                if (entry.responseHeaders) {
+                    entry.responseHeaders = [];
+                }
+                if (entry.redirectChain) {
+                    entry.redirectChain = [];
+                }
+            }
+        }
         // Large dumps already carry kinds; reinfer All re-clones every entry (WebKit peak).
         if (normalized.results.length <= LARGE_DUMP_REINFER_THRESHOLD) {
             reinferAllLinkKinds();

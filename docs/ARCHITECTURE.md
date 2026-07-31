@@ -111,7 +111,7 @@ npm run deploy:linux   # build + install:linux
 
 Таuri використовує системний WebView (WebKitGTK на Linux) замість вбудованого Chromium — основна економія місця.
 
-**Linux menubar:** нативне меню бере кольори з GTK. Змішані теми дають білий текст на світлій смузі. У `main.rs` перед стартом виставляється **узгоджена** `GTK_THEME` за light/dark ОС (`gsettings` color-scheme / gtk-theme, або KDE ColorScheme): наприклад `adw-gtk3-dark` / `Adwaita:dark` для dark і `adw-gtk3` / `Adwaita` для light. Якщо користувач уже задав `GTK_THEME` — не чіпаємо.
+**Linux menubar:** нативне GTK-меню на Linux вимкнено (білий текст на світлій смузі при mixed themes). Дії «Зберегти/Відкрити дамп» і «Про програму» — у тулбарі UI + `Ctrl+Shift+S` / `Ctrl+Shift+O`. На macOS/Windows лишається нативне меню.
 
 ## Памʼять (WebKitGTK / JSC vs Electron V8)
 
@@ -121,9 +121,10 @@ npm run deploy:linux   # build + install:linux
 
 | Місце | Поведінка |
 |-------|-----------|
-| `scan-store` `outgoingLinksByPageCache` | Легкі edge stubs (url, status, external, fetched, kind, tag, text, rel*, imgAlt*, contentType) — **без** копії title/headers/headings/meta на кожне ребро |
-| Великий dump load (`results.length > 5000`) | `normalizeLoadedDump` приймає `results` in-place (без `cloneResultEntry`); `reinferAllLinkKinds` пропускається (kinds уже в дампі) |
-| `session_load` | Після validate повертає лише `{ ok, filePath }`; frontend читає файл через `plugin-fs` / `window.api.readSessionDumpText` і обнуляє великі рядки після `JSON.parse` |
+| `scan-store` counts cache | Таблиця бере `getOutgoingCounts` (числа), **без** матеріалузації всіх outlink-обʼєктів на весь граф |
+| `getOutgoingLinksFrom` | Ліниво, лише для однієї сторінки (деталь / CSV рядка); LRU ≈ 64 сторінки |
+| Великий dump load (`results.length > 5000`) | `normalizeLoadedDump` in-place; `reinferAllLinkKinds` skip; `responseHeaders` / `redirectChain` обнуляються після ingest |
+| `session_load` | Повертає `{ ok, filePath }`; frontend читає через `plugin-fs` і обнуляє великі рядки після `JSON.parse` |
 
 Capabilities `fs:scope`: `$HOME/**`, `$DOCUMENT/**`, `$DOWNLOAD/**`, `$DESKTOP/**`, `$APPDATA/**`.
 

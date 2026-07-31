@@ -117,6 +117,7 @@ function reinferAllLinkKinds() {
 function getRowMetrics(data) {
     return getRowMetricsImpl(data, {
         getReferrersForUrl,
+        getOutgoingCounts: (url) => scanStore.getOutgoingCounts(url),
         getOutgoingLinksFrom,
         isDiscoveredOnly,
         isExternalLink: (entry) => isExternalLinkImpl(entry, getScanHostname()),
@@ -699,6 +700,30 @@ async function handleMenuLoadedDump(payload) {
 
 window.api.onSessionDumpRequestSave(() => saveSessionDumpToFile());
 window.api.onSessionDumpLoaded((payload) => handleMenuLoadedDump(payload));
+
+document.getElementById('saveDumpButton')?.addEventListener('click', () => {
+    void saveSessionDumpToFile();
+});
+document.getElementById('loadDumpButton')?.addEventListener('click', () => {
+    void loadSessionDumpFromFile();
+});
+document.getElementById('openAboutButton')?.addEventListener('click', () => {
+    window.api.showAbout();
+});
+
+window.addEventListener('keydown', (event) => {
+    if (!(event.ctrlKey || event.metaKey) || !event.shiftKey) {
+        return;
+    }
+    const key = event.key.toLowerCase();
+    if (key === 's') {
+        event.preventDefault();
+        void saveSessionDumpToFile();
+    } else if (key === 'o') {
+        event.preventDefault();
+        void loadSessionDumpFromFile();
+    }
+});
 
 async function tryStartScanFromInput() {
     const startUrl = urlInput.value.trim();

@@ -2,13 +2,16 @@ mod commands;
 mod crawl;
 mod settings;
 
+use tauri::AppHandle;
+#[cfg(not(target_os = "linux"))]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 
 const MENU_DUMP_SAVE: &str = "session-dump-save";
 const MENU_DUMP_LOAD: &str = "session-dump-load";
 const MENU_ABOUT: &str = "about-show";
 
+#[cfg(not(target_os = "linux"))]
 fn build_menu(app: &AppHandle) -> tauri::Result<()> {
     let save_dump = MenuItemBuilder::with_id(MENU_DUMP_SAVE, "Зберегти дамп сканування…")
         .accelerator("CmdOrCtrl+Shift+S")
@@ -72,10 +75,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            let handle = app.handle().clone();
-            if let Err(error) = build_menu(&handle) {
-                eprintln!("Не вдалося створити меню: {error}");
+            // Linux: GTK menubar often renders white-on-white with mixed themes.
+            // File/About actions live in the in-app toolbar + Ctrl+Shift+S/O instead.
+            #[cfg(not(target_os = "linux"))]
+            {
+                let handle = app.handle().clone();
+                if let Err(error) = build_menu(&handle) {
+                    eprintln!("Не вдалося створити меню: {error}");
+                }
             }
+            let _ = app;
             Ok(())
         })
         .on_menu_event(|app, event| {
