@@ -1,0 +1,27 @@
+---
+description: Spider-Tauri crawler — architecture context and doc maintenance
+alwaysApply: true
+---
+
+# Spider-Tauri
+
+Desktop web crawler (Tauri v2 + Rust). Read `docs/ARCHITECTURE.md` before editing crawler, commands/events, or UI logic.
+
+## Key files
+
+- `src-tauri/src/crawl/` — Rust crawler (BFS, fetch, scraper, robots.txt)
+- `src-tauri/src/commands.rs` — Tauri commands
+- `src/api.js` — `window.api` bridge
+- `src/renderer.js` — UI, CSV export
+- `src/index.html` — layout
+
+## After code changes
+
+If behavior, commands/events, constants, data models, deps, or file structure changed — update `docs/ARCHITECTURE.md` in the same session (see `docs/DOC_MAINTENANCE.md` checklist). Update the "Останнє оновлення" date in ARCHITECTURE.md.
+
+## Conventions
+
+- Network requests only in Rust.
+- New commands/events: update `commands.rs` / emit sites + `api.js` + renderer.
+- Match existing style: minimal scope, no over-abstraction.
+- UI text is Ukrainian; match unless user requests otherwise.

@@ -1,0 +1,29 @@
+{
+  "name": "spider-tauri",
+  "version": "1.0.0",
+  "description": "A web spider built with Tauri v2",
+  "author": "andxbes <andxbes@gmail.com>",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:css": "postcss ./src/input.css -o ./src/styles.css",
+    "predev": "npm run build:css",
+    "dev": "tauri dev",
+    "prebuild": "npm run build:css",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@tailwindcss/postcss": "^4.3.0",
+    "postcss": "^8.5.15",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.3.0"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-opener": "^2"
+  }
+}
