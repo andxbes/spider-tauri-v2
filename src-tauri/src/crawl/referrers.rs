@@ -7,10 +7,6 @@ use parking_lot::Mutex;
 
 use crate::crawl::types::{LinkMeta, ReferrerEntry, ReferrersUpdatePayload, RobotsFields};
 
-/// Above this many tracked targets the full graph is too big to ship over IPC,
-/// so the renderer is told to rebuild it locally instead.
-pub const FULL_SYNC_LIMIT: usize = 8000;
-
 struct ReferrerStore {
     by_target: HashMap<String, HashMap<String, LinkMeta>>,
     robots_by_url: HashMap<String, RobotsFields>,
@@ -71,25 +67,6 @@ pub fn set_robots_fields(url: &str, fields: RobotsFields) {
     STORE.lock().robots_by_url.insert(url.to_string(), fields);
 }
 
-/// Inbound links for one target, ready to attach to a result row.
-pub fn get_list(target: &str) -> Vec<ReferrerEntry> {
-    let store = STORE.lock();
-    store
-        .by_target
-        .get(target)
-        .map(|edges| {
-            edges
-                .iter()
-                .map(|(href, meta)| ReferrerEntry::from_meta(href.clone(), meta))
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-pub fn target_count() -> usize {
-    STORE.lock().by_target.len()
-}
-
 /// Full snapshot of the graph keyed by target URL.
 pub fn snapshot() -> HashMap<String, Vec<ReferrerEntry>> {
     let store = STORE.lock();
@@ -106,17 +83,12 @@ pub fn snapshot() -> HashMap<String, Vec<ReferrerEntry>> {
         .collect()
 }
 
-/// Build the `spider-referrers-update` payload, skipping the (potentially
-/// huge) graph when there are too many targets.
+/// Build the end-of-scan `spider-referrers-update` payload.
+///
+/// Always ships the full graph: live `spider-result` rows no longer embed
+/// referrers (that was a second copy over IPC). `skip_full_sync` stays false
+/// for renderer compatibility.
 pub fn build_all_payload() -> ReferrersUpdatePayload {
-    let count = target_count();
-    if count > FULL_SYNC_LIMIT {
-        return ReferrersUpdatePayload {
-            referrers: HashMap::new(),
-            robots_by_url: HashMap::new(),
-            skip_full_sync: true,
-        };
-    }
     let robots_by_url = STORE.lock().robots_by_url.clone();
     ReferrersUpdatePayload {
         referrers: snapshot(),

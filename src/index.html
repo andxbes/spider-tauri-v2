@@ -6,13 +6,19 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
     />
-    <title>Electron Web Spider</title>
+    <title>Tauri Web Spider</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body class="bg-zinc-100 text-zinc-800 font-sans h-full w-full min-w-0 flex flex-col overflow-hidden">
-    <header class="shrink-0 w-full min-w-0 border-b border-zinc-300 bg-white px-3 py-3 sm:px-4">
+  <body
+    class="bg-zinc-100 text-zinc-800 font-sans h-full w-full min-w-0 flex flex-col overflow-hidden"
+  >
+    <header
+      class="shrink-0 w-full min-w-0 border-b border-zinc-300 bg-white px-3 py-3 sm:px-4"
+    >
       <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
-        <h1 class="text-lg font-bold text-zinc-700 shrink-0">Electron Web Spider</h1>
+        <h1 class="text-lg font-bold text-zinc-700 shrink-0">
+          Tauri Web Spider
+        </h1>
         <div
           id="urlInputWrap"
           class="relative w-full min-w-0 rounded-md border border-zinc-300 overflow-hidden bg-white lg:flex-grow"
@@ -129,74 +135,112 @@
     </header>
 
     <main class="flex-grow flex flex-col min-h-0 min-w-0 w-full p-2 gap-0">
-      <div id="resultsPanel" class="flex-grow min-h-[120px] w-full min-w-0 border border-zinc-300 rounded-md bg-white overflow-hidden flex flex-col mb-2">
-        <div id="contentTypeTabs" class="flex flex-wrap gap-1 px-2 pt-2 border-b border-zinc-200 bg-zinc-50 shrink-0">
-          <button type="button" data-content="all" class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-blue-600 text-blue-700 bg-white rounded-t">Усі</button>
-          <button type="button" data-content="html" class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t">HTML</button>
-          <button type="button" data-content="javascript" class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t">JavaScript</button>
-          <button type="button" data-content="css" class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t">CSS</button>
-          <button type="button" data-content="media" class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t">Media</button>
+      <div
+        id="resultsPanel"
+        class="flex-grow min-h-[120px] w-full min-w-0 border border-zinc-300 rounded-md bg-white overflow-hidden flex flex-col mb-2"
+      >
+        <div
+          id="contentTypeTabs"
+          class="flex flex-wrap gap-1 px-2 pt-2 border-b border-zinc-200 bg-zinc-50 shrink-0"
+        >
+          <button
+            type="button"
+            data-content="all"
+            class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-blue-600 text-blue-700 bg-white rounded-t"
+          >
+            Усі
+          </button>
+          <button
+            type="button"
+            data-content="html"
+            class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t"
+          >
+            HTML
+          </button>
+          <button
+            type="button"
+            data-content="javascript"
+            class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t"
+          >
+            JavaScript
+          </button>
+          <button
+            type="button"
+            data-content="css"
+            class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t"
+          >
+            CSS
+          </button>
+          <button
+            type="button"
+            data-content="media"
+            class="content-type-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800 rounded-t"
+          >
+            Media
+          </button>
         </div>
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-1.5 border-b border-zinc-200 bg-zinc-50 text-xs shrink-0">
+        <div
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-1.5 border-b border-zinc-200 bg-zinc-50 text-xs shrink-0"
+        >
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
-          <label class="flex items-center gap-1.5">
-            <span class="text-zinc-500 whitespace-nowrap">Статус:</span>
-            <select
-              id="statusFilter"
-              class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[8rem]"
-            >
-              <option value="all">Усі</option>
-              <option value="2xx">2xx</option>
-              <option value="3xx">3xx</option>
-              <option value="4xx">4xx</option>
-              <option value="5xx">5xx</option>
-              <option value="ERROR">Помилка мережі</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-1.5">
-            <span class="text-zinc-500 whitespace-nowrap">Індексація:</span>
-            <select
-              id="indexingFilter"
-              class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[7rem]"
-            >
-              <option value="all">Усі</option>
-              <option value="allowed">Дозволено</option>
-              <option value="blocked">Заблоковано</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-1.5">
-            <span class="text-zinc-500 whitespace-nowrap">H1:</span>
-            <select
-              id="h1Filter"
-              class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[7rem]"
-            >
-              <option value="all">Усі</option>
-              <option value="multiple">Більше 1</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-1.5">
-            <span class="text-zinc-500 whitespace-nowrap">Дублікати:</span>
-            <select
-              id="duplicateFilter"
-              class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[9rem]"
-            >
-              <option value="all">Усі</option>
-              <option value="h1">H1</option>
-              <option value="title">Title</option>
-              <option value="description">Meta description</option>
-            </select>
-          </label>
-          <label class="flex items-center gap-1.5">
-            <span class="text-zinc-500 whitespace-nowrap">Джерело:</span>
-            <select
-              id="sourceFilter"
-              class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[8rem]"
-            >
-              <option value="all">Усі</option>
-              <option value="internal">Внутрішні</option>
-              <option value="external">Зовнішні</option>
-            </select>
-          </label>
+            <label class="flex items-center gap-1.5">
+              <span class="text-zinc-500 whitespace-nowrap">Статус:</span>
+              <select
+                id="statusFilter"
+                class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[8rem]"
+              >
+                <option value="all">Усі</option>
+                <option value="2xx">2xx</option>
+                <option value="3xx">3xx</option>
+                <option value="4xx">4xx</option>
+                <option value="5xx">5xx</option>
+                <option value="ERROR">Помилка мережі</option>
+              </select>
+            </label>
+            <label class="flex items-center gap-1.5">
+              <span class="text-zinc-500 whitespace-nowrap">Індексація:</span>
+              <select
+                id="indexingFilter"
+                class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[7rem]"
+              >
+                <option value="all">Усі</option>
+                <option value="allowed">Дозволено</option>
+                <option value="blocked">Заблоковано</option>
+              </select>
+            </label>
+            <label class="flex items-center gap-1.5">
+              <span class="text-zinc-500 whitespace-nowrap">H1:</span>
+              <select
+                id="h1Filter"
+                class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[7rem]"
+              >
+                <option value="all">Усі</option>
+                <option value="multiple">Більше 1</option>
+              </select>
+            </label>
+            <label class="flex items-center gap-1.5">
+              <span class="text-zinc-500 whitespace-nowrap">Дублікати:</span>
+              <select
+                id="duplicateFilter"
+                class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[9rem]"
+              >
+                <option value="all">Усі</option>
+                <option value="h1">H1</option>
+                <option value="title">Title</option>
+                <option value="description">Meta description</option>
+              </select>
+            </label>
+            <label class="flex items-center gap-1.5">
+              <span class="text-zinc-500 whitespace-nowrap">Джерело:</span>
+              <select
+                id="sourceFilter"
+                class="px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 min-w-[8rem]"
+              >
+                <option value="all">Усі</option>
+                <option value="internal">Внутрішні</option>
+                <option value="external">Зовнішні</option>
+              </select>
+            </label>
           </div>
           <div class="flex items-center gap-2 ml-auto shrink-0">
             <input
@@ -206,12 +250,18 @@
               autocomplete="off"
               class="w-44 sm:w-52 px-2 py-1 border border-zinc-300 rounded bg-white text-zinc-800 placeholder:text-zinc-400"
             />
-            <span id="filterCount" class="text-zinc-400 whitespace-nowrap"></span>
+            <span
+              id="filterCount"
+              class="text-zinc-400 whitespace-nowrap"
+            ></span>
           </div>
         </div>
         <div id="pagesTableScroll" class="results-table-wrap">
           <table id="resultsDataTable" class="results-data-table text-xs">
-            <thead id="pagesTableHead" class="sticky top-0 bg-zinc-100 border-b border-zinc-300 z-10">
+            <thead
+              id="pagesTableHead"
+              class="sticky top-0 bg-zinc-100 border-b border-zinc-300 z-10"
+            >
               <tr class="text-left text-zinc-600"></tr>
             </thead>
             <tbody id="resultsTable"></tbody>
@@ -232,29 +282,31 @@
         id="detailPanel"
         class="shrink-0 min-h-[120px] w-full min-w-0 border border-zinc-300 rounded-md bg-white flex flex-col overflow-hidden mt-1"
       >
-        <div class="flex border-b border-zinc-300 bg-zinc-50 shrink-0 min-w-0 overflow-hidden">
+        <div
+          class="flex border-b border-zinc-300 bg-zinc-50 shrink-0 min-w-0 overflow-hidden"
+        >
           <div class="flex shrink-0 min-w-0">
-          <button
-            type="button"
-            data-tab="details"
-            class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-blue-600 text-blue-700 bg-white"
-          >
-            Деталі URL
-          </button>
-          <button
-            type="button"
-            data-tab="inlinks"
-            class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800"
-          >
-            Вхідні посилання
-          </button>
-          <button
-            type="button"
-            data-tab="outlinks"
-            class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800"
-          >
-            Вихідні посилання
-          </button>
+            <button
+              type="button"
+              data-tab="details"
+              class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-blue-600 text-blue-700 bg-white"
+            >
+              Деталі URL
+            </button>
+            <button
+              type="button"
+              data-tab="inlinks"
+              class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800"
+            >
+              Вхідні посилання
+            </button>
+            <button
+              type="button"
+              data-tab="outlinks"
+              class="detail-tab page-view-tab px-4 py-2 text-xs font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-800"
+            >
+              Вихідні посилання
+            </button>
           </div>
           <div class="flex-grow min-w-0 basis-0"></div>
           <button
@@ -265,7 +317,10 @@
           >
             Експорт CSV
           </button>
-          <div id="selectedUrlBar" class="flex items-center gap-1 px-2 py-1 min-w-0 max-w-md shrink-0 border-l border-zinc-200">
+          <div
+            id="selectedUrlBar"
+            class="flex items-center gap-1 px-2 py-1 min-w-0 max-w-md shrink-0 border-l border-zinc-200"
+          >
             <span
               id="selectedUrlHint"
               class="text-xs text-zinc-500 truncate italic min-w-0 flex-1"
@@ -274,7 +329,10 @@
             </span>
           </div>
         </div>
-        <div id="detailContent" class="overflow-auto flex-grow min-w-0 p-0 text-xs">
+        <div
+          id="detailContent"
+          class="overflow-auto flex-grow min-w-0 p-0 text-xs"
+        >
           <p class="p-4 text-zinc-400 italic">Оберіть URL у таблиці вище</p>
         </div>
       </div>
@@ -301,11 +359,19 @@
       aria-labelledby="settingsModalTitle"
       aria-hidden="true"
     >
-      <div class="settings-modal-backdrop" data-settings-close tabindex="-1"></div>
+      <div
+        class="settings-modal-backdrop"
+        data-settings-close
+        tabindex="-1"
+      ></div>
       <div class="settings-modal-panel">
         <div class="bg-white border border-zinc-300 rounded-md shadow-lg">
-          <div class="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6">
-            <h2 id="settingsModalTitle" class="text-lg font-bold text-zinc-700">Налаштування</h2>
+          <div
+            class="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6"
+          >
+            <h2 id="settingsModalTitle" class="text-lg font-bold text-zinc-700">
+              Налаштування
+            </h2>
             <button
               type="button"
               class="settings-modal-close px-2 py-1 text-sm text-zinc-500 hover:text-zinc-800 rounded-md hover:bg-zinc-100"
@@ -317,7 +383,9 @@
           </div>
           <form id="settingsForm" class="p-4 sm:p-6 space-y-6">
             <section>
-              <h3 class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+              <h3
+                class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3"
+              >
                 Обхід сайту
               </h3>
               <label class="flex items-start gap-3 cursor-pointer select-none">
@@ -327,16 +395,21 @@
                   class="mt-1 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span>
-                  <span class="font-medium">Спочатку з sitemap + обхід посилань на сторінках</span>
+                  <span class="font-medium"
+                    >Спочатку з sitemap + обхід посилань на сторінках</span
+                  >
                   <span class="block text-sm text-zinc-500 mt-1">
-                    Читає Sitemap з robots.txt (або типові шляхи), додає URL у чергу,
-                    потім аналізує посилання на кожній сторінці. Якщо нижче вказані власні
-                    sitemap — robots.txt і типові шляхи не використовуються.
+                    Читає Sitemap з robots.txt (або типові шляхи), додає URL у
+                    чергу, потім аналізує посилання на кожній сторінці. Якщо
+                    нижче вказані власні sitemap — robots.txt і типові шляхи не
+                    використовуються.
                   </span>
                 </span>
               </label>
               <div class="mt-4">
-                <label for="sitemapUrls" class="block font-medium mb-1">Sitemap URL (необовʼязково)</label>
+                <label for="sitemapUrls" class="block font-medium mb-1"
+                  >Sitemap URL (необовʼязково)</label
+                >
                 <textarea
                   id="sitemapUrls"
                   rows="3"
@@ -344,11 +417,14 @@
                   placeholder="https://example.com/sitemap.xml&#10;/custom-sitemap.xml"
                 ></textarea>
                 <p class="text-sm text-zinc-500 mt-1">
-                  Один URL на рядок (абсолютний або шлях від кореня сайту). Працює лише якщо
-                  увімкнено обхід з sitemap. Не зберігається у файл — лише поки відкрито вікно.
+                  Один URL на рядок (абсолютний або шлях від кореня сайту).
+                  Працює лише якщо увімкнено обхід з sitemap. Не зберігається у
+                  файл — лише поки відкрито вікно.
                 </p>
               </div>
-              <label class="flex items-start gap-3 cursor-pointer select-none mt-4">
+              <label
+                class="flex items-start gap-3 cursor-pointer select-none mt-4"
+              >
                 <input
                   type="checkbox"
                   id="respectRobotsTxt"
@@ -356,17 +432,22 @@
                   checked
                 />
                 <span>
-                  <span class="font-medium">Дотримуватись robots.txt при обході</span>
+                  <span class="font-medium"
+                    >Дотримуватись robots.txt при обході</span
+                  >
                   <span class="block text-sm text-zinc-500 mt-1">
-                    Якщо вимкнено — URL з Disallow у robots.txt все одно скануються.
-                    Колонка Robots.txt і meta robots у таблиці залишаються.
+                    Якщо вимкнено — URL з Disallow у robots.txt все одно
+                    скануються. Колонка Robots.txt і meta robots у таблиці
+                    залишаються.
                   </span>
                 </span>
               </label>
             </section>
 
             <section>
-              <label for="concurrency" class="block font-medium mb-1">Паралельних потоків</label>
+              <label for="concurrency" class="block font-medium mb-1"
+                >Паралельних потоків</label
+              >
               <input
                 type="number"
                 id="concurrency"
@@ -376,12 +457,15 @@
                 class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <p class="text-sm text-zinc-500 mt-1">
-                Скільки сторінок сканувати одночасно (1–50). Більше — швидше, але вище навантаження на сайт і UI.
+                Скільки сторінок сканувати одночасно (1–50). Більше — швидше,
+                але вище навантаження на сайт і UI.
               </p>
             </section>
 
             <section>
-              <label for="maxPages" class="block font-medium mb-1">Ліміт сторінок</label>
+              <label for="maxPages" class="block font-medium mb-1"
+                >Ліміт сторінок</label
+              >
               <input
                 type="number"
                 id="maxPages"
@@ -389,24 +473,32 @@
                 placeholder="0"
                 class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
-              <p class="text-sm text-zinc-500 mt-1">0 — без ліміту. Сканування зупиниться після N сторінок.</p>
+              <p class="text-sm text-zinc-500 mt-1">
+                0 — без ліміту. Сканування зупиниться після N сторінок.
+              </p>
             </section>
 
             <section>
-              <h3 class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+              <h3
+                class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3"
+              >
                 HTTP-запити
               </h3>
-              <label for="userAgentPreset" class="block font-medium mb-1">User-Agent</label>
+              <label for="userAgentPreset" class="block font-medium mb-1"
+                >User-Agent</label
+              >
               <select
                 id="userAgentPreset"
                 class="w-full p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
               ></select>
               <p class="text-sm text-zinc-500 mt-1">
-                Браузери, пошукові боти або власний рядок. Використовується в усіх запитах і для
-                перевірки правил у robots.txt.
+                Браузери, пошукові боти або власний рядок. Використовується в
+                усіх запитах і для перевірки правил у robots.txt.
               </p>
               <div id="userAgentCustomFields" class="hidden mt-4">
-                <label for="userAgentCustom" class="block font-medium mb-1">Власний User-Agent</label>
+                <label for="userAgentCustom" class="block font-medium mb-1"
+                  >Власний User-Agent</label
+                >
                 <textarea
                   id="userAgentCustom"
                   rows="2"
@@ -416,11 +508,16 @@
               </div>
               <p class="text-xs text-zinc-400 mt-2">
                 Поточний:
-                <code id="userAgentPreview" class="block mt-1 text-zinc-500 break-all"></code>
+                <code
+                  id="userAgentPreview"
+                  class="block mt-1 text-zinc-500 break-all"
+                ></code>
               </p>
 
               <div class="mt-4">
-                <label for="requestDelayMs" class="block font-medium mb-1">Пауза між запитами (мс)</label>
+                <label for="requestDelayMs" class="block font-medium mb-1"
+                  >Пауза між запитами (мс)</label
+                >
                 <input
                   type="number"
                   id="requestDelayMs"
@@ -430,14 +527,17 @@
                   class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <p class="text-sm text-zinc-500 mt-1">
-                  Затримка перед кожним HTTP-запитом на воркер. 0 — без паузи. Рекомендовано 500 мс
-                  (з випадковим розкидом ±20%). При паралельних потоках навантаження множиться.
+                  Затримка перед кожним HTTP-запитом на воркер. 0 — без паузи.
+                  Рекомендовано 500 мс (з випадковим розкидом ±20%). При
+                  паралельних потоках навантаження множиться.
                 </p>
               </div>
             </section>
 
             <section>
-              <h3 class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+              <h3
+                class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3"
+              >
                 Серверна автентифікація
               </h3>
               <label for="authType" class="block font-medium mb-1">Тип</label>
@@ -450,13 +550,16 @@
                 <option value="bearer">Bearer-токен</option>
               </select>
               <p class="text-sm text-zinc-500 mt-1">
-                Застосовується лише до URL з hostname сканованого сайту. На публічні сторінки
-                зайвий заголовок не заважає; на зовнішні домени не надсилається.
+                Застосовується лише до URL з hostname сканованого сайту. На
+                публічні сторінки зайвий заголовок не заважає; на зовнішні
+                домени не надсилається.
               </p>
 
               <div id="authBasicFields" class="hidden mt-4 space-y-3">
                 <div>
-                  <label for="authUsername" class="block font-medium mb-1">Логін</label>
+                  <label for="authUsername" class="block font-medium mb-1"
+                    >Логін</label
+                  >
                   <input
                     type="text"
                     id="authUsername"
@@ -465,7 +568,9 @@
                   />
                 </div>
                 <div>
-                  <label for="authPassword" class="block font-medium mb-1">Пароль</label>
+                  <label for="authPassword" class="block font-medium mb-1"
+                    >Пароль</label
+                  >
                   <input
                     type="password"
                     id="authPassword"
@@ -476,7 +581,9 @@
               </div>
 
               <div id="authBearerFields" class="hidden mt-4">
-                <label for="authToken" class="block font-medium mb-1">Токен</label>
+                <label for="authToken" class="block font-medium mb-1"
+                  >Токен</label
+                >
                 <input
                   type="password"
                   id="authToken"
@@ -500,12 +607,18 @@
               >
                 Закрити
               </button>
-              <span id="saveStatus" class="text-sm text-green-600 hidden">Збережено</span>
+              <span id="saveStatus" class="text-sm text-green-600 hidden"
+                >Збережено</span
+              >
             </div>
 
             <p class="text-xs text-zinc-400 pt-2 border-t border-zinc-100">
               Файл налаштувань:
-              <code id="settingsPathHint" class="block mt-1 text-zinc-500 break-all">…</code>
+              <code
+                id="settingsPathHint"
+                class="block mt-1 text-zinc-500 break-all"
+                >…</code
+              >
             </p>
           </form>
         </div>
@@ -522,9 +635,15 @@
     >
       <div class="settings-modal-backdrop" data-about-close tabindex="-1"></div>
       <div class="settings-modal-panel">
-        <div class="bg-white border border-zinc-300 rounded-md shadow-lg max-w-md w-full">
-          <div class="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6">
-            <h2 id="aboutModalTitle" class="text-lg font-bold text-zinc-700">Про програму</h2>
+        <div
+          class="bg-white border border-zinc-300 rounded-md shadow-lg max-w-md w-full"
+        >
+          <div
+            class="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6"
+          >
+            <h2 id="aboutModalTitle" class="text-lg font-bold text-zinc-700">
+              Про програму
+            </h2>
             <button
               type="button"
               class="px-2 py-1 text-sm text-zinc-500 hover:text-zinc-800 rounded-md hover:bg-zinc-100"
@@ -535,7 +654,9 @@
             </button>
           </div>
           <div class="p-4 sm:p-6 space-y-4 text-sm text-zinc-700">
-            <p class="text-base font-semibold text-zinc-800" id="aboutAppName">Electron Web Spider</p>
+            <p class="text-base font-semibold text-zinc-800" id="aboutAppName">
+              Tauri Web Spider
+            </p>
             <p>
               <span class="text-zinc-500">Версія:</span>
               <span id="aboutVersion" class="font-medium">—</span>
@@ -546,7 +667,8 @@
                 id="aboutAuthorLink"
                 href="mailto:andxbes@gmail.com"
                 class="text-blue-700 hover:underline font-medium"
-              >andxbes</a>
+                >andxbes</a
+              >
             </p>
             <p class="text-zinc-500 text-xs pt-2 border-t border-zinc-100">
               Desktop-краулер для аналізу внутрішніх посилань сайту.

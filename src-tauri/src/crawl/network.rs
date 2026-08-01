@@ -13,7 +13,7 @@ use url::Url;
 use crate::crawl::auth::AuthConfig;
 use crate::crawl::robots::RobotsTxt;
 use crate::crawl::state::runtime;
-use crate::crawl::types::{HeaderEntry, RobotsFields};
+use crate::crawl::types::RobotsFields;
 use crate::crawl::url_utils::{get_content_type, get_origin, is_html_content};
 
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20);
@@ -22,11 +22,11 @@ pub const SITEMAP_TIMEOUT: Duration = Duration::from_secs(60);
 pub const MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 
 /// A response reduced to the fields the crawler cares about.
+/// Full header maps are not retained — live UI / dumps omit them for RAM.
 #[derive(Debug, Clone)]
 pub struct FetchResponse {
     pub url: String,
     pub status: u16,
-    pub headers: Vec<HeaderEntry>,
     pub content_type: String,
     pub location: Option<String>,
     pub x_robots_tag: String,
@@ -98,7 +98,6 @@ impl HttpClient {
 
         let status = response.status().as_u16();
         let final_url = response.url().to_string();
-        let headers = collect_headers(response.headers());
         let content_type = get_content_type(
             response
                 .headers()
@@ -138,7 +137,6 @@ impl HttpClient {
         Ok(FetchResponse {
             url: final_url,
             status,
-            headers,
             content_type,
             location,
             x_robots_tag,
@@ -208,16 +206,6 @@ impl HttpClient {
 
 fn head_rejected(status: u16) -> bool {
     matches!(status, 400 | 403 | 405 | 501)
-}
-
-fn collect_headers(headers: &HeaderMap) -> Vec<HeaderEntry> {
-    headers
-        .iter()
-        .map(|(name, value)| HeaderEntry {
-            name: name.as_str().to_string(),
-            value: value.to_str().unwrap_or("").to_string(),
-        })
-        .collect()
 }
 
 fn truncate_on_char_boundary(text: &str, max_bytes: usize) -> &str {

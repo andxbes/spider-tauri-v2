@@ -54,7 +54,6 @@ pub async fn probe_discovered_link(app: &AppHandle, item: QueueItem) {
     let mut final_status: Option<u16> = None;
     let mut content_type = String::new();
     let mut response_time_ms: Option<u64> = None;
-    let mut headers = Vec::new();
     let mut x_robots = String::new();
     let mut redirect_target = String::new();
     let mut error_message: Option<String> = None;
@@ -75,7 +74,6 @@ pub async fn probe_discovered_link(app: &AppHandle, item: QueueItem) {
                     final_status = Some(response.status);
                     content_type = response.content_type.clone();
                     response_time_ms = Some(response.elapsed_ms);
-                    headers = response.headers.clone();
                     x_robots = response.x_robots_tag.clone();
                 }
                 if !is_redirect_status(response.status) {
@@ -113,7 +111,6 @@ pub async fn probe_discovered_link(app: &AppHandle, item: QueueItem) {
             result.status = json!(status);
             result.content_type = content_type;
             result.response_time_ms = response_time_ms;
-            result.response_headers = headers;
         }
         (None, Some(message)) => {
             result.status = json!("ERROR");
@@ -138,7 +135,6 @@ pub async fn probe_discovered_link(app: &AppHandle, item: QueueItem) {
     };
     results::apply_indexing_fields(&mut result, "", &x_robots, &robots);
     tracker.to_fields(&mut result, &redirect_target);
-    result.referrers = referrers::get_list(&item.url);
 
     rt.bump_scanned();
     emit::queue_result(app, result);

@@ -12,7 +12,7 @@ function initAboutModal() {
     async function populateAbout() {
         const info = await window.api.getAboutInfo();
         if (appNameEl) {
-            appNameEl.textContent = info.name || 'Electron Web Spider';
+            appNameEl.textContent = info.name || 'Tauri Web Spider';
         }
         if (versionEl) {
             versionEl.textContent = info.version || '—';

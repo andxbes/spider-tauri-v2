@@ -48,6 +48,13 @@ function mergeFetchedPageFields(existing, incoming) {
         merged.responseTimeMs = existing.responseTimeMs;
     }
 
+    // Live crawl omits referrers on rows (end sync fills them). Don't wipe
+    // any referrers already attached (e.g. after a partial sync).
+    if ((!Array.isArray(merged.referrers) || merged.referrers.length === 0)
+        && Array.isArray(existing.referrers) && existing.referrers.length > 0) {
+        merged.referrers = existing.referrers;
+    }
+
     // Keep crawl redirect summary if a later update (e.g. probe) would wipe it with final 2xx.
     const existingHops = Number(existing.redirectHopCount || 0);
     const incomingHops = Number(incoming.redirectHopCount || 0);

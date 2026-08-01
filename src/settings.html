@@ -6,7 +6,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
     />
-    <title>Налаштування — Electron Web Spider</title>
+    <title>Налаштування — Tauri Web Spider</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body class="bg-zinc-100 text-zinc-800 font-sans">
@@ -21,9 +21,14 @@
         </a>
       </div>
 
-      <form id="settingsForm" class="bg-white border border-zinc-300 rounded-md p-6 space-y-6">
+      <form
+        id="settingsForm"
+        class="bg-white border border-zinc-300 rounded-md p-6 space-y-6"
+      >
         <section>
-          <h2 class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+          <h2
+            class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3"
+          >
             Обхід сайту
           </h2>
           <label class="flex items-start gap-3 cursor-pointer select-none">
@@ -33,16 +38,21 @@
               class="mt-1 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
             />
             <span>
-              <span class="font-medium">Спочатку з sitemap + обхід посилань на сторінках</span>
+              <span class="font-medium"
+                >Спочатку з sitemap + обхід посилань на сторінках</span
+              >
               <span class="block text-sm text-zinc-500 mt-1">
-                Читає Sitemap з robots.txt (або типові шляхи), додає URL у чергу,
-                потім аналізує посилання на кожній сторінці. Якщо нижче вказані власні
-                sitemap — robots.txt і типові шляхи не використовуються.
+                Читає Sitemap з robots.txt (або типові шляхи), додає URL у
+                чергу, потім аналізує посилання на кожній сторінці. Якщо нижче
+                вказані власні sitemap — robots.txt і типові шляхи не
+                використовуються.
               </span>
             </span>
           </label>
           <div class="mt-4">
-            <label for="sitemapUrls" class="block font-medium mb-1">Sitemap URL (необовʼязково)</label>
+            <label for="sitemapUrls" class="block font-medium mb-1"
+              >Sitemap URL (необовʼязково)</label
+            >
             <textarea
               id="sitemapUrls"
               rows="3"
@@ -50,8 +60,9 @@
               placeholder="https://example.com/sitemap.xml&#10;/custom-sitemap.xml"
             ></textarea>
             <p class="text-sm text-zinc-500 mt-1">
-              Один URL на рядок (абсолютний або шлях від кореня сайту). Працює лише якщо
-              увімкнено обхід з sitemap. Не зберігається у файл — лише поки відкрито вікно.
+              Один URL на рядок (абсолютний або шлях від кореня сайту). Працює
+              лише якщо увімкнено обхід з sitemap. Не зберігається у файл — лише
+              поки відкрито вікно.
             </p>
           </div>
           <label class="flex items-start gap-3 cursor-pointer select-none mt-4">
@@ -62,7 +73,9 @@
               checked
             />
             <span>
-              <span class="font-medium">Дотримуватись robots.txt при обході</span>
+              <span class="font-medium"
+                >Дотримуватись robots.txt при обході</span
+              >
               <span class="block text-sm text-zinc-500 mt-1">
                 Якщо вимкнено — URL з Disallow у robots.txt все одно скануються.
                 Колонка Robots.txt і meta robots у таблиці залишаються.
@@ -72,20 +85,26 @@
         </section>
 
         <section>
-          <h2 class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+          <h2
+            class="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3"
+          >
             HTTP-запити
           </h2>
-          <label for="userAgentPreset" class="block font-medium mb-1">User-Agent</label>
+          <label for="userAgentPreset" class="block font-medium mb-1"
+            >User-Agent</label
+          >
           <select
             id="userAgentPreset"
             class="w-full p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
           ></select>
           <p class="text-sm text-zinc-500 mt-1">
-            Браузери, пошукові боти або власний рядок. Використовується в усіх запитах і для
-            перевірки правил у robots.txt.
+            Браузери, пошукові боти або власний рядок. Використовується в усіх
+            запитах і для перевірки правил у robots.txt.
           </p>
           <div id="userAgentCustomFields" class="hidden mt-4">
-            <label for="userAgentCustom" class="block font-medium mb-1">Власний User-Agent</label>
+            <label for="userAgentCustom" class="block font-medium mb-1"
+              >Власний User-Agent</label
+            >
             <textarea
               id="userAgentCustom"
               rows="2"
@@ -95,11 +114,16 @@
           </div>
           <p class="text-xs text-zinc-400 mt-2">
             Поточний:
-            <code id="userAgentPreview" class="block mt-1 text-zinc-500 break-all"></code>
+            <code
+              id="userAgentPreview"
+              class="block mt-1 text-zinc-500 break-all"
+            ></code>
           </p>
 
           <div class="mt-4">
-            <label for="requestDelayMs" class="block font-medium mb-1">Пауза між запитами (мс)</label>
+            <label for="requestDelayMs" class="block font-medium mb-1"
+              >Пауза між запитами (мс)</label
+            >
             <input
               type="number"
               id="requestDelayMs"
@@ -109,14 +133,17 @@
               class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
             <p class="text-sm text-zinc-500 mt-1">
-              Затримка перед кожним HTTP-запитом на воркер. 0 — без паузи. Рекомендовано 500 мс
-              (з випадковим розкидом ±20%). При паралельних потоках навантаження множиться.
+              Затримка перед кожним HTTP-запитом на воркер. 0 — без паузи.
+              Рекомендовано 500 мс (з випадковим розкидом ±20%). При паралельних
+              потоках навантаження множиться.
             </p>
           </div>
         </section>
 
         <section>
-          <label for="concurrency" class="block font-medium mb-1">Паралельних потоків</label>
+          <label for="concurrency" class="block font-medium mb-1"
+            >Паралельних потоків</label
+          >
           <input
             type="number"
             id="concurrency"
@@ -126,12 +153,15 @@
             class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           <p class="text-sm text-zinc-500 mt-1">
-            Скільки сторінок сканувати одночасно (1–50). Більше — швидше, але вище навантаження на сайт і UI.
+            Скільки сторінок сканувати одночасно (1–50). Більше — швидше, але
+            вище навантаження на сайт і UI.
           </p>
         </section>
 
         <section>
-          <label for="maxPages" class="block font-medium mb-1">Ліміт сторінок</label>
+          <label for="maxPages" class="block font-medium mb-1"
+            >Ліміт сторінок</label
+          >
           <input
             type="number"
             id="maxPages"
@@ -139,7 +169,9 @@
             placeholder="0"
             class="w-32 p-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
-          <p class="text-sm text-zinc-500 mt-1">0 — без ліміту. Сканування зупиниться після N сторінок.</p>
+          <p class="text-sm text-zinc-500 mt-1">
+            0 — без ліміту. Сканування зупиниться після N сторінок.
+          </p>
         </section>
 
         <div class="flex items-center gap-3 pt-2 border-t border-zinc-200">
@@ -149,12 +181,16 @@
           >
             Зберегти
           </button>
-          <span id="saveStatus" class="text-sm text-green-600 hidden">Збережено</span>
+          <span id="saveStatus" class="text-sm text-green-600 hidden"
+            >Збережено</span
+          >
         </div>
 
         <p class="text-xs text-zinc-400 pt-2 border-t border-zinc-100">
           Файл налаштувань:
-          <code id="settingsPathHint" class="block mt-1 text-zinc-500 break-all">…</code>
+          <code id="settingsPathHint" class="block mt-1 text-zinc-500 break-all"
+            >…</code
+          >
         </p>
       </form>
     </div>

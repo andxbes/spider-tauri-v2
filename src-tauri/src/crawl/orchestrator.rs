@@ -185,22 +185,26 @@ pub async fn start_spider(app: AppHandle, start_url: String, options: SpiderOpti
     emit::spawn_flusher(app_for_flush, || !CTRL.finished.load(Ordering::SeqCst));
 
     if options.use_sitemap {
-        send_progress(&app, "Sitemap...", None);
-        let pages = sitemap::discover_sitemap_urls(
+        let sitemap_page_count = sitemap::seed_queue_from_sitemaps(
+            &app,
             &origin,
+            &hostname,
             &user_agent,
             &auth,
             &options.sitemap_urls,
+            aborting,
         )
         .await;
-        for page in pages {
-            if aborting() {
-                break;
-            }
-            if is_same_host(&page, &hostname) {
-                queue::enqueue_url(&page);
-            }
+        if aborting() {
+            complete_scan(&app, "Сканування зупинено.");
+            return;
         }
+        let status = if sitemap_page_count > 0 {
+            format!("З sitemap додано в чергу: {sitemap_page_count}")
+        } else {
+            "Sitemap не знайдено, обхід за посиланнями".to_string()
+        };
+        send_progress(&app, &status, None);
     }
 
     queue::enqueue_url(&start_norm);
@@ -301,6 +305,10 @@ fn complete_scan(app: &AppHandle, message: &str) {
     emit::emit_referrers(app);
     send_progress(app, message, Some(true));
     emit::emit_end(app, message);
+    // JS now owns the result set + referrer graph; drop the native copy.
+    referrers::clear();
+    runtime().clear();
+    emit::clear_buffer();
 }
 
 async fn crawl_url(app: &AppHandle, item: QueueItem) {
@@ -322,7 +330,6 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
         result.status = json!(0);
         result.fetched = false;
         results::apply_indexing_fields(&mut result, "", "", &robots);
-        result.referrers = referrers::get_list(&url);
         rt.bump_scanned();
         emit::queue_result(app, result);
         return;
@@ -375,11 +382,9 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
                 result.status = json!(first_status.unwrap_or(response.status));
                 result.fetched = true;
                 result.content_type = response.content_type.clone();
-                result.response_headers = response.headers.clone();
                 result.response_time_ms = Some(response.elapsed_ms);
                 results::apply_indexing_fields(&mut result, "", &response.x_robots_tag, &robots);
                 tracker.to_fields(&mut result, &first_redirect_target);
-                result.referrers = referrers::get_list(&url);
                 rt.bump_scanned();
                 emit::queue_result(app, result);
                 return;
@@ -390,7 +395,6 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
                 result.status = json!(first_status.unwrap_or(response.status));
                 result.fetched = true;
                 tracker.to_fields(&mut result, &first_redirect_target);
-                result.referrers = referrers::get_list(&url);
                 rt.bump_scanned();
                 emit::queue_result(app, result);
                 return;
@@ -400,7 +404,6 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
                 result.status = json!(first_status.unwrap_or(response.status));
                 result.fetched = true;
                 tracker.to_fields(&mut result, &first_redirect_target);
-                result.referrers = referrers::get_list(&url);
                 rt.bump_scanned();
                 emit::queue_result(app, result);
                 return;
@@ -425,7 +428,6 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
                 result.fetched = true;
                 tracker.to_fields(&mut result, &first_redirect_target);
                 results::apply_indexing_fields(&mut result, "", "", &hop_robots);
-                result.referrers = referrers::get_list(&url);
                 rt.bump_scanned();
                 emit::queue_result(app, result);
                 return;
@@ -453,13 +455,11 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
     result.status = status_value;
     result.fetched = true;
     result.content_type = response.content_type.clone();
-    result.response_headers = response.headers.clone();
     result.response_time_ms = Some(response.elapsed_ms);
     tracker.to_fields(&mut result, &first_redirect_target);
 
     if !(200..300).contains(&response.status) || !is_html_content(&response.content_type) {
         results::apply_indexing_fields(&mut result, "", &response.x_robots_tag, &robots);
-        result.referrers = referrers::get_list(&url);
         rt.bump_scanned();
         emit::queue_result(app, result);
         return;
@@ -492,7 +492,6 @@ async fn crawl_url(app: &AppHandle, item: QueueItem) {
         &response.x_robots_tag,
         &robots,
     );
-    result.referrers = referrers::get_list(&url);
     let follow = result.meta_robots_status != "nofollow"
         && result.x_robots_tag_status != "nofollow"
         && result.meta_robots_status != "closed"

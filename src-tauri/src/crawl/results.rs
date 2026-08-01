@@ -2,16 +2,15 @@
 
 use serde_json::Value;
 
-use crate::crawl::referrers;
 use crate::crawl::types::{LinkMeta, RobotsFields, SpiderResult};
 use crate::crawl::url_utils::is_same_host;
 
-/// Empty row for `url` with its currently known inbound links attached.
+/// Empty row for `url`. Referrers are omitted here — the full graph is
+/// shipped once at scan end via `spider-referrers-update` (avoids double IPC).
 pub fn build_spider_result(url: &str, hostname: &str) -> SpiderResult {
     SpiderResult {
         url: url.to_string(),
         external: !is_same_host(url, hostname),
-        referrers: referrers::get_list(url),
         ..SpiderResult::default()
     }
 }

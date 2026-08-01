@@ -96,6 +96,8 @@ pub struct SpiderResult {
     pub x_robots_tag_status: String,
     pub x_robots_tag_label: String,
 
+    /// Not filled on live crawl (detail shows "—"); dump import also strips.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub response_headers: Vec<HeaderEntry>,
     pub robots_allowed: Option<bool>,
     pub robots_rule: String,
@@ -124,6 +126,8 @@ pub struct SpiderResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub img_alt: Option<String>,
 
+    /// Live rows omit this; full graph arrives via `spider-referrers-update`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub referrers: Vec<ReferrerEntry>,
     pub headings: Vec<Heading>,
 

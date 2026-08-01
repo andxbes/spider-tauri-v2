@@ -1,6 +1,6 @@
 # Spider-Tauri — внутрішня документація
 
-> Останнє оновлення: 2026-07-31 (save dump: stream chunks, без IPC гіганта)  
+> Останнє оновлення: 2026-08-01 (sitemap progress як у Electron + referrer)  
 > Короткий довідник для розробки та правок. Детальніше про підтримку — [DOC_MAINTENANCE.md](./DOC_MAINTENANCE.md).
 
 ## Що це
@@ -76,6 +76,8 @@ api.js listen → Renderer
 
 Константи: HTTP timeout 20s (sitemap 60s), delay default 500ms ±20% jitter **на кожен worker** (не глобальна черга слотів — інакше concurrency ≈ 1), concurrency 1–50 (default 3), HTML parse via `spawn_blocking`.
 
+**Sitemap (`useSitemap`):** перед обходом — `robots.txt` → `Sitemap:` (або fallback `/sitemap_index.xml`, `/sitemap.xml`, `/index.xml`). Якщо задано `sitemapUrls` — лише вони (шляхи від origin). Progress: `Пошук sitemap (N)...` → `Sitemap k: у черзі …` → `З sitemap додано в чергу: N` / `Sitemap не знайдено…`. Referrer для seeded URL — адреса sitemap-файлу.
+
 ## Налаштування
 
 `settings.json` у AppData. Поля: `useSitemap`, `respectRobotsTxt`, `userAgentPreset` / `userAgentCustom`, `requestDelayMs`, `maxPages`, `concurrency`, `authType` / `authUsername` / `authPassword` / `authToken`.
@@ -117,7 +119,7 @@ npm run deploy:linux   # build + install:linux
 
 Той самий `.spider.json` у Tauri (WebKitGTK + JSC) може займати значно більше RAM, ніж у Electron (V8): JSC сильніше «роздуває» великі object graphs.
 
-Мітигації у frontend / IPC:
+Мітигації у frontend / IPC / crawl:
 
 | Місце | Поведінка |
 |-------|-----------|
@@ -126,6 +128,9 @@ npm run deploy:linux   # build + install:linux
 | `session_import` | Rust читає/парсить дамп (без headers/chains), стрімить батчі в UI — **без** `JSON.parse` 300MB+ у WebKit |
 | `session_save_pick` + `session_dump_write_chunk` | Save: діалог шляху, потім append батчами з JS — **без** одного `JSON.stringify`+IPC на весь дамп |
 | `session_load` | Legacy path-only (залишено); UI відкриває дамп через `session_import` |
+| Live `spider-result` | **Без** `responseHeaders` і **без** `referrers` на кожному рядку (як compact dump) |
+| `spider-referrers-update` | Один повний sync графа в кінці скану (завжди; `skipFullSync` не використовується) |
+| `complete_scan` | Після emit — `referrers::clear()` + `runtime().clear()` (немає другої native-копії до наступного старту) |
 
 Capabilities `fs:scope`: `$HOME/**`, `$DOCUMENT/**`, `$DOWNLOAD/**`, `$DESKTOP/**`, `$APPDATA/**`.
 
